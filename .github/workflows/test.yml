@@ -1,0 +1,38 @@
+name: tests
+
+# Fast suite on every push to main and on pull requests; slow suite on version tags and on demand
+# (Actions tab → tests → Run workflow, pick "slow").
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      suite:
+        description: Test suite
+        type: choice
+        options: [fast, slow]
+        default: slow
+
+jobs:
+  test:
+    runs-on: windows-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Git identity for test repositories
+        run: |
+          git config --global user.name "ci"
+          git config --global user.email "ci@example.com"
+      - name: Run tests
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then suite="${{ inputs.suite }}";
+          elif [ "${{ startsWith(github.ref, 'refs/tags/') }}" = "true" ]; then suite=slow;
+          else suite=fast; fi
+          echo "suite: $suite"
+          node dwmt/test/run.mjs "$suite"
