@@ -1,6 +1,10 @@
 # dwmt (don't waste my time)
 
-A lean sprint workflow plugin for Claude Code. An architect agent plans every task of a sprint upfront, executors implement them one by one, a risk-based review and a fixer check the result, the sprint lands as one squash commit, and you run the acceptance test (UAT). The mechanics (state, tests, git) run in a Node script, not in the model.
+A Claude Code plugin that works like an agile team working for you. The team keeps a backlog and a roadmap, has a product owner and specialists such as an architect and a UX designer, and delivers in sprints.
+
+You are the stakeholder: you bring ideas and bugs, take part in planning, answer the team's questions and accept what has been delivered.
+
+Under the hood each sprint is planned, implemented task by task, reviewed and lands as one commit on your branch; the mechanics (state, tests, git) run in a Node script, not in the model.
 
 ## Requirements
 
