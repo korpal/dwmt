@@ -20,8 +20,8 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 90
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 24
       - name: Git identity for test repositories
@@ -35,4 +35,22 @@ jobs:
           elif [ "${{ startsWith(github.ref, 'refs/tags/') }}" = "true" ]; then suite=slow;
           else suite=fast; fi
           echo "suite: $suite"
-          node dwmt/test/run.mjs "$suite"
+          set +e
+          node dwmt/test/run.mjs "$suite" 2>&1 | tee test-output.txt
+          rc=${PIPESTATUS[0]}
+          # The run page summary is public (job logs need sign-in): result line per file, then red-file tails.
+          {
+            echo "## $suite suite"
+            echo '```'
+            grep -E '^(ok|not ok) [0-9]+ - |^# files:' test-output.txt
+            echo '```'
+            if [ "$rc" -ne 0 ]; then
+              echo '<details><summary>Red files: output</summary>'
+              echo
+              echo '```'
+              awk '/^# red /{p=1} p' test-output.txt | head -c 200000
+              echo '```'
+              echo '</details>'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$rc"
