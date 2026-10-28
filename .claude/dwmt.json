@@ -1,0 +1,29 @@
+// dwmt na dwmt (decyzja użytkownika 2026-10-21): to repo rozwija dwmt sprintami dwmt. Plugin instalowany z publicznego
+// marketplace (`dwmt@dwmt`: `/plugin install dwmt --marketplace korpal/dwmt`), nigdy z tego katalogu roboczego.
+// Nowa wersja: podbij `version` w dwmt/.claude-plugin/plugin.json, otaguj, wypchnij, potem
+// `claude plugin marketplace update dwmt` i `claude plugin update dwmt@dwmt`.
+{
+  "language": "pl",
+  "git": { "target": "master", "rebase": "finish", "finish": "squash" },
+  // Pełna suita dwmt (~53 min) jest za droga na każdy sprint (decyzja użytkownika 2026-10-21): przy finish biegnie zestaw
+  // szybki (`node dwmt/test/run.mjs fast`, ~5 min), zestaw wolny (`node dwmt/test/run.mjs slow`) uruchamia się ręcznie
+  // przed tagiem nowej wersji (kt, D-7; lista w dwmt/test/sets.mjs). Bez e2eChanged (decyzja użytkownika 2026-10-22).
+  // Zadania mają własne verify z planu; rundy poprawek i naprawy powtarzają tylko czerwone albo zmienione pliki testów
+  // (`testFiles`), a `failedFileRegex` łapie linie runnera (`not ok <n> - <plik>`) i `test at <plik>:<l>` z node --test.
+  "verify": {
+    "targeted": null,
+    "full": ["node dwmt/test/run.mjs fast"],
+    "testFiles": "dwmt/test/*.test.mjs",
+    "rerunCmd": "node --test {file}",
+    "failedFileRegex": "(?:not ok \\d+ - |test at )(\\S+\\.test\\.mjs)"
+  },
+  // Bez bramki ceny (decyzja użytkownika 2026-10-21).
+  "run": { "priceGate": false },
+  "deletes": { "ask": false },
+  "drive": { "enabled": true },
+  "product": {
+    "dir": "docs/product",
+    // Strona commitowana razem z produktem (decyzja użytkownika 2026-10-21, F-2).
+    "view": { "publish": "docs/product/roadmapa.html" }
+  }
+}

@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sketch 003 — backlog i decyzje</title>
+<link rel="stylesheet" href="../themes/default.css">
+<link rel="stylesheet" href="../shared/app.css">
+<link rel="stylesheet" href="../shared/board.css">
+<style>
+.en-note { font-size: var(--text-sm); color: var(--color-text-muted); margin: var(--space-3) 0 0; }
+.toolbar { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; padding: var(--space-2) var(--space-3); background: var(--color-surface);
+  border: 1px solid var(--color-border); border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
+.toolbar input[type=search] { border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 4px 8px; width: 220px; background: var(--color-surface); }
+.toolbar select { border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 3px 6px; background: var(--color-surface); font-size: var(--text-sm); }
+.toolbar .spacer { flex: 1; }
+.toolbar label { font-size: var(--text-sm); color: var(--color-text-muted); display: inline-flex; gap: 4px; align-items: center; }
+.fchip { display: inline-flex; gap: 5px; align-items: center; border: 1px solid var(--color-border); background: var(--color-surface); border-radius: var(--radius-full);
+  padding: 1px 9px 1px 4px; font-size: var(--text-sm); cursor: pointer; transition: all .15s ease; }
+.fchip:hover { border-color: var(--color-border-strong); }
+.fchip.on { background: var(--color-primary-bg); border-color: var(--color-primary); color: var(--color-primary); }
+.fchip b { font-weight: 600; color: var(--color-text-muted); font-variant-numeric: tabular-nums; }
+.fchip.text { padding-left: 9px; }
+.shown { font-size: var(--text-sm); color: var(--color-text-subtle); }
+.tbl { background: var(--color-surface); border: 1px solid var(--color-border); border-top: 0; border-radius: 0 0 var(--radius-lg) var(--radius-lg); overflow: auto; max-height: calc(100vh - 290px); }
+table.grid { width: 100%; border-collapse: collapse; }
+table.grid th { text-align: left; font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .04em; color: var(--color-text-muted); font-weight: 600; padding: 6px 10px;
+  border-bottom: 1px solid var(--color-border); background: var(--color-surface-2); position: sticky; top: 0; z-index: 1; white-space: nowrap; cursor: pointer; user-select: none; }
+table.grid th:hover { color: var(--color-text); }
+table.grid th .arr { opacity: .6; }
+table.grid td { padding: 5px 10px; border-bottom: 1px solid var(--color-border); vertical-align: top; }
+table.grid tbody tr { cursor: pointer; transition: background .15s; }
+table.grid tbody tr:hover { background: var(--color-hover); }
+table.grid tr.closed td { color: var(--color-text-subtle); }
+td.t { min-width: 360px; }
+td.t .note { font-size: var(--text-sm); color: var(--color-text-subtle); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 640px; }
+.tri { font-size: var(--text-sm); white-space: nowrap; }
+.tri.new { color: var(--st-done); font-weight: 600; }
+.warn { color: var(--st-done); font-weight: 700; }
+/* grouped */
+.groups { display: flex; flex-direction: column; gap: var(--space-2); margin-top: var(--space-3); }
+details.grp { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); }
+details.grp > summary { list-style: none; display: flex; gap: var(--space-2); align-items: center; padding: var(--space-2) var(--space-3); cursor: pointer; font-weight: 600; }
+details.grp > summary::-webkit-details-marker { display: none; }
+details.grp > summary::before { content: "▸"; color: var(--color-text-subtle); transition: transform .15s; }
+details.grp[open] > summary::before { transform: rotate(90deg); }
+details.grp > summary .n { color: var(--color-text-muted); font-weight: 400; }
+details.grp > summary .hint { color: var(--color-text-subtle); font-weight: 400; font-size: var(--text-sm); }
+.mix { display: flex; height: 6px; width: 140px; border-radius: 3px; overflow: hidden; margin-left: auto; background: var(--color-hover); }
+.mix span { display: block; height: 100%; }
+.rows { border-top: 1px solid var(--color-border); }
+.r { display: grid; grid-template-columns: 18px 64px 1fr auto; gap: var(--space-2); align-items: center; padding: 5px var(--space-3); border-bottom: 1px solid var(--color-border); cursor: pointer; transition: background .15s; }
+.r:last-child { border-bottom: 0; }
+.r:hover { background: var(--color-hover); }
+.r .tt { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.r.dec { grid-template-columns: 56px 1fr auto; }
+.r.dec .sub { font-size: var(--text-sm); color: var(--color-text-subtle); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.area { display: inline-block; font-size: var(--text-xs); border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: 0 5px; margin: 1px 2px 1px 0; color: var(--color-text-muted); white-space: nowrap; }
+.mono-list { font-family: var(--font-mono); font-size: var(--text-sm); color: var(--color-text-muted); margin: 0; padding-left: 16px; word-break: break-all; }
+.kv2 { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; font-size: var(--text-sm); }
+.kv2 dt { color: var(--color-text-muted); }
+.kv2 dd { margin: 0; }
+</style>
+</head>
+<body>
+<script src="../data/data.js"></script>
+<script src="../data/pl.js"></script>
+<script src="../data/human.js"></script>
+<script src="../shared/app.js"></script>
+<script src="../shared/board.js"></script>
+<script>
+const { esc, t } = App;
+const D = App.D;
+App.extendT({
+  ty_bug: 'Błąd', ty_feature: 'Funkcja', ty_debt: 'Dług', ty_remark: 'Uwaga', ty_idea: 'Pomysł', ty_change: 'Zmiana',
+  tr_new: 'Do triażu', tr_later: 'Na później', tr_touch: 'Przy okazji', tr_never: 'Nigdy', tr_sprint: 'W sprincie',
+  trh_new: 'nowe, PO jeszcze nie zdecydował', trh_later: 'czeka na decyzję o sprincie', trh_touch: 'zrobi się, gdy sprint dotknie tego miejsca', trh_never: 'świadomie odrzucone', trh_sprint: 'przypisane do sprintu',
+  sv_blocker: 'Blokujący', sv_major: 'Poważny', sv_minor: 'Drobny',
+  is_open: 'Otwarta', is_planned: 'Zaplanowana', is_done: 'Zrobiona', is_dropped: 'Porzucona',
+  search: 'Szukaj w tytułach i notatkach…', searchD: 'Szukaj w decyzjach…', anyTriage: 'Triaż: wszystkie', anySev: 'Ważność: wszystkie', showClosed: 'Pokaż zamknięte ({n})',
+  shownOf: 'Pokazano {a} z {b}', c_type: 'Typ', c_id: 'ID', c_title: 'Tytuł', c_sev: 'Ważność', c_tri: 'Triaż', c_at: 'Dodano', groupBy: 'Grupuj:',
+  g_triage: 'triaż', g_sprint: 'sprint', g_type: 'typ', g_sev: 'ważność', noSprint: 'Bez sprintu', noSev: 'Bez ważności',
+  enNote: 'Tytuły, notatki i treść decyzji są w plikach po angielsku; w wersji docelowej strona pokaże je z pamięci tłumaczeń.',
+  f_note: 'Notatka', f_where: 'Gdzie w kodzie', f_src: 'Źródło', f_status: 'Status', f_state: 'Stan', f_tri: 'Triaż', f_sprint: 'Sprint', f_sev: 'Ważność', f_at: 'Dodano', f_est: 'Szacunek',
+  d_decision: 'Decyzja', d_why: 'Dlaczego', d_rejected: 'Odrzucone', d_area: 'Obszar', d_at: 'Data', d_by: 'Kto', d_against: 'Wbrew rekomendacji', d_againstOnly: 'Tylko wbrew rekomendacji',
+  by_import: 'import (stara roadmapa)', by_po: 'PO z Tobą', by_expert: 'ekspert, potwierdzone', c_dec: 'Decyzja', c_area: 'Obszar', c_by: 'Kto', allAreas: 'Obszar: wszystkie',
+  yes: 'tak', no: 'nie', staleHint: 'Sprint jest już zamknięty, a pozycja nie została rozliczona (ani zrobiona, ani wrócona do triażu).',
+}, {
+  ty_bug: 'Bug', ty_feature: 'Feature', ty_debt: 'Debt', ty_remark: 'Remark', ty_idea: 'Idea', ty_change: 'Change',
+  tr_new: 'To triage', tr_later: 'Later', tr_touch: 'On touch', tr_never: 'Never', tr_sprint: 'In sprint',
+  trh_new: 'new, the PO has not decided yet', trh_later: 'waits for a sprint decision', trh_touch: 'done when a sprint touches this place', trh_never: 'deliberately rejected', trh_sprint: 'assigned to a sprint',
+  sv_blocker: 'Blocker', sv_major: 'Major', sv_minor: 'Minor',
+  is_open: 'Open', is_planned: 'Planned', is_done: 'Done', is_dropped: 'Dropped',
+  search: 'Search titles and notes…', searchD: 'Search decisions…', anyTriage: 'Triage: all', anySev: 'Severity: all', showClosed: 'Show closed ({n})',
+  shownOf: 'Showing {a} of {b}', c_type: 'Type', c_id: 'ID', c_title: 'Title', c_sev: 'Severity', c_tri: 'Triage', c_at: 'Added', groupBy: 'Group:',
+  g_triage: 'triage', g_sprint: 'sprint', g_type: 'type', g_sev: 'severity', noSprint: 'No sprint', noSev: 'No severity',
+  enNote: '',
+  f_note: 'Note', f_where: 'Where in the code', f_src: 'Source', f_status: 'Status', f_state: 'State', f_tri: 'Triage', f_sprint: 'Sprint', f_sev: 'Severity', f_at: 'Added', f_est: 'Estimate',
+  d_decision: 'Decision', d_why: 'Why', d_rejected: 'Rejected', d_area: 'Area', d_at: 'Date', d_by: 'By', d_against: 'Against recommendation', d_againstOnly: 'Only against recommendation',
+  by_import: 'import (old roadmap)', by_po: 'PO with you', by_expert: 'expert, confirmed', c_dec: 'Decision', c_area: 'Area', c_by: 'By', allAreas: 'Area: all',
+  yes: 'yes', no: 'no', staleHint: 'The sprint is closed but the item was neither done nor returned to triage.',
+});
+
+const TYPES = ['bug', 'feature', 'change', 'debt', 'remark', 'idea'];
+const TYPE_COLOR = { bug: '--kind-bug', feature: '--kind-feature', change: '--kind-change', debt: '--kind-debt', remark: '--kind-remark', idea: '--kind-idea' };
+const ALL = [...D.backlog, ...D.backlogArchive];
+const triKey = (b) => (!b.triage ? 'new' : b.triage.startsWith('sprint:') ? 'sprint' : b.triage);
+const staleSprint = (b) => triKey(b) === 'sprint' && !closed(b) && !App.openMap[b.triage.slice(7)] && !!App.archMap[b.triage.slice(7)];
+const triLabel = (b) => { const k = triKey(b); if (k !== 'sprint') return t('tr_' + k); const s = b.triage.slice(7);
+  return `${t('tr_sprint')} <span class="chip" data-open="${esc(s)}">${esc(s)}</span>${staleSprint(b) ? ` <span class="warn" title="${esc(t('staleHint'))}">⚠</span>` : ''}`; };
+const closed = (b) => b.state === 'done' || b.state === 'dropped';
+const sevPill = (s) => (s ? `<span class="pill ${s === 'minor' ? 'topic' : 'done'}">${t('sv_' + s)}</span>` : '');
+const areas = (d) => (d.area || 'general').split(',').map((x) => x.trim()).filter(Boolean);
+const u = { q: '', types: new Set(), tri: '', sev: '', closed: false, sort: 'id', dir: -1, group: 'triage', dq: '', area: '', against: false };
+const num = (id) => +id.replace(/\D/g, '');
+
+function filteredItems() {
+  const q = u.q.toLowerCase();
+  return ALL.filter((b) => (u.closed || !closed(b)) && (!u.types.size || u.types.has(b.type)) && (!u.tri || triKey(b) === u.tri) && (!u.sev || b.sev === u.sev)
+    && (!q || (b.id + ' ' + b.title + ' ' + (b.note || '')).toLowerCase().includes(q)));
+}
+function typeChips(src) {
+  return TYPES.map((ty) => `<span class="fchip ${u.types.has(ty) ? 'on' : ''}" onclick="u.types.has('${ty}')?u.types.delete('${ty}'):u.types.add('${ty}');App.render()">${App.kind(ty, true)}${t('ty_' + ty)} <b>${src.filter((b) => b.type === ty).length}</b></span>`).join('');
+}
+function itemToolbar(rows, extra = '') {
+  const base = ALL.filter((b) => u.closed || !closed(b));
+  return `<div class="toolbar"><input type="search" placeholder="${t('search')}" value="${esc(u.q)}" oninput="u.q=this.value;refresh()">
+    ${typeChips(base)}
+    <select onchange="u.tri=this.value;App.render()"><option value="">${t('anyTriage')}</option>${['new', 'sprint', 'touch', 'later', 'never'].map((k) => `<option value="${k}" ${u.tri === k ? 'selected' : ''}>${t('tr_' + k)}</option>`).join('')}</select>
+    <select onchange="u.sev=this.value;App.render()"><option value="">${t('anySev')}</option>${['blocker', 'major', 'minor'].map((k) => `<option value="${k}" ${u.sev === k ? 'selected' : ''}>${t('sv_' + k)}</option>`).join('')}</select>
+    ${extra}<span class="spacer"></span>
+    <label><input type="checkbox" ${u.closed ? 'checked' : ''} onchange="u.closed=this.checked;App.render()"> ${t('showClosed', { n: D.backlogArchive.length })}</label>
+    <span class="shown" id="shown">${t('shownOf', { a: rows.length, b: base.length })}</span></div>`;
+}
+let refresh = () => App.render();
+
+/* ---------------- A: Jira backlog table ---------------- */
+function itemTable(rows) {
+  const key = { id: (b) => num(b.id), type: (b) => TYPES.indexOf(b.type), title: (b) => b.title, sev: (b) => ['blocker', 'major', 'minor'].indexOf(b.sev ?? 'x'), tri: (b) => triKey(b), at: (b) => b.at || '' }[u.sort];
+  rows = rows.slice().sort((a, b) => (key(a) > key(b) ? 1 : key(a) < key(b) ? -1 : 0) * u.dir);
+  const th = (k, label) => `<th onclick="u.dir=u.sort==='${k}'?-u.dir:1;u.sort='${k}';App.render()">${label} ${u.sort === k ? `<span class="arr">${u.dir > 0 ? '▲' : '▼'}</span>` : ''}</th>`;
+  return `<table class="grid"><thead><tr>${th('type', t('c_type'))}${th('id', t('c_id'))}${th('title', t('c_title'))}${th('sev', t('c_sev'))}${th('tri', t('c_tri'))}${th('at', t('c_at'))}</tr></thead>
+    <tbody>${rows.map((b) => `<tr data-item="${b.id}" class="${closed(b) ? 'closed' : ''}"><td>${App.kind(b.type, true)}</td><td><span class="id">${b.id}</span></td>
+      <td class="t"><div>${esc(b.title)}</div>${b.note ? `<div class="note">${esc(b.note)}</div>` : ''}</td><td>${sevPill(b.sev)}</td>
+      <td><span class="tri ${triKey(b) === 'new' ? 'new' : ''}" title="${esc(t('trh_' + triKey(b)))}">${triLabel(b)}</span></td><td class="subtle">${App.fmtDate(b.at)}</td></tr>`).join('')}</tbody></table>`;
+}
+function decisionsTable(rows) {
+  return `<table class="grid"><thead><tr><th>${t('c_id')}</th><th>${t('c_dec')}</th><th>${t('c_area')}</th><th>${t('d_at')}</th><th>${t('c_by')}</th><th></th></tr></thead><tbody>
+    ${rows.map((d) => `<tr data-pd="${d.id}"><td><span class="id">${d.id}</span></td><td class="t"><div>${esc(d.title)}</div><div class="note">${esc(d.Decision || '')}</div></td>
+      <td>${areas(d).map((a) => `<span class="area">${esc(a)}</span>`).join('')}</td><td class="subtle">${App.fmtDate(d.at)}</td><td class="subtle">${esc(t('by_' + d.by) || d.by)}</td>
+      <td>${/^yes/i.test(d['Against recommendation'] || '') ? `<span class="warn" title="${t('d_against')}">⚠</span>` : ''}</td></tr>`).join('')}</tbody></table>`;
+}
+function filteredDecisions() {
+  const q = u.dq.toLowerCase();
+  return D.decisions.filter((d) => (!u.area || areas(d).includes(u.area)) && (!u.against || /^yes/i.test(d['Against recommendation'] || ''))
+    && (!q || JSON.stringify(d).toLowerCase().includes(q))).slice().reverse();
+}
+function decisionsToolbar(rows) {
+  const counts = {}; D.decisions.forEach((d) => areas(d).forEach((a) => (counts[a] = (counts[a] || 0) + 1)));
+  const top = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  return `<div class="toolbar"><input type="search" placeholder="${t('searchD')}" value="${esc(u.dq)}" oninput="u.dq=this.value;refresh()">
+    ${top.slice(0, 8).map(([a, n]) => `<span class="fchip text ${u.area === a ? 'on' : ''}" onclick="u.area=u.area==='${esc(a)}'?'':'${esc(a)}';App.render()">${esc(a)} <b>${n}</b></span>`).join('')}
+    <select onchange="u.area=this.value;App.render()"><option value="">${t('allAreas')}</option>${top.map(([a, n]) => `<option ${u.area === a ? 'selected' : ''} value="${esc(a)}">${esc(a)} (${n})</option>`).join('')}</select>
+    <span class="spacer"></span><label><input type="checkbox" ${u.against ? 'checked' : ''} onchange="u.against=this.checked;App.render()"> ${t('d_againstOnly')}</label>
+    <span class="shown">${t('shownOf', { a: rows.length, b: D.decisions.length })}</span></div>`;
+}
+function renderA() {
+  const en = App.lang() === 'pl' ? `<p class="en-note">${t('enNote')}</p>` : '';
+  if (App.tab() === 'decisions') { const rows = filteredDecisions(); return `<div class="page">${en}<div style="margin-top:var(--space-3)">${decisionsToolbar(rows)}<div class="tbl" id="tbody">${decisionsTable(rows)}</div></div></div>`; }
+  const rows = filteredItems();
+  return `<div class="page">${en}<div style="margin-top:var(--space-3)">${itemToolbar(rows)}<div class="tbl" id="tbody">${itemTable(rows)}</div></div></div>`;
+}
+
+/* ---------------- B: grouped (GitHub Projects) ---------------- */
+function mix(rows) {
+  return `<span class="mix">${TYPES.map((ty) => { const n = rows.filter((b) => b.type === ty).length; return n ? `<span title="${t('ty_' + ty)} ${n}" style="width:${(n / rows.length) * 100}%;background:var(${TYPE_COLOR[ty]})"></span>` : ''; }).join('')}</span>`;
+}
+function groupsOf(rows) {
+  const g = u.group;
+  if (g === 'triage') return ['new', 'sprint', 'touch', 'later', 'never'].map((k) => ({ label: t('tr_' + k), hint: t('trh_' + k), rows: rows.filter((b) => triKey(b) === k), open: k !== 'later' }));
+  if (g === 'type') return TYPES.map((k) => ({ label: App.kind(k, true) + ' ' + t('ty_' + k), rows: rows.filter((b) => b.type === k), open: rows.filter((b) => b.type === k).length < 60 }));
+  if (g === 'sev') return ['blocker', 'major', 'minor', null].map((k) => ({ label: k ? t('sv_' + k) : t('noSev'), rows: rows.filter((b) => (b.sev || null) === k), open: !!k }));
+  const ids = [...new Set(rows.map((b) => b.sprint).filter(Boolean))];
+  return [...ids.map((s) => ({ label: `<span class="chip" data-open="${esc(s)}">${esc(s)}</span> ${esc(App.htitle(s, (App.openMap[s] || App.archMap[s] || {}).goal || ''))}`, rows: rows.filter((b) => b.sprint === s), open: true })),
+    { label: t('noSprint'), rows: rows.filter((b) => !b.sprint), open: false }];
+}
+function renderB() {
+  const en = App.lang() === 'pl' ? `<p class="en-note">${t('enNote')}</p>` : '';
+  if (App.tab() === 'decisions') {
+    const rows = filteredDecisions();
+    const byArea = {}; rows.forEach((d) => { const a = areas(d)[0]; (byArea[a] = byArea[a] || []).push(d); });
+    return `<div class="page">${en}<div style="margin-top:var(--space-3)">${decisionsToolbar(rows)}</div><div class="groups">${Object.entries(byArea).sort((a, b) => b[1].length - a[1].length).map(([a, ds]) =>
+      `<details class="grp" open><summary>${esc(a)} <span class="n">${ds.length}</span></summary><div class="rows">${ds.map((d) => `<div class="r dec" data-pd="${d.id}"><span class="id">${d.id}</span>
+        <div style="min-width:0"><div class="tt">${esc(d.title)}</div><div class="sub">${esc(d.Decision || '')}</div></div>
+        <span>${/^yes/i.test(d['Against recommendation'] || '') ? '<span class="warn">⚠</span>' : ''} <span class="subtle">${App.fmtDate(d.at)}</span></span></div>`).join('')}</div></details>`).join('')}</div></div>`;
+  }
+  const rows = filteredItems();
+  const groupSel = `<label>${t('groupBy')} <select onchange="u.group=this.value;App.render()">${['triage', 'sprint', 'type', 'sev'].map((g) => `<option value="${g}" ${u.group === g ? 'selected' : ''}>${t('g_' + g)}</option>`).join('')}</select></label>`;
+  return `<div class="page">${en}<div style="margin-top:var(--space-3)">${itemToolbar(rows, groupSel)}</div><div class="groups">${groupsOf(rows).filter((g) => g.rows.length).map((g) =>
+    `<details class="grp" ${g.open ? 'open' : ''}><summary>${g.label} <span class="n">${g.rows.length}</span>${g.hint ? `<span class="hint">${esc(g.hint)}</span>` : ''}${mix(g.rows)}</summary>
+      <div class="rows">${g.rows.map((b) => `<div class="r" data-item="${b.id}">${App.kind(b.type, true)}<span class="id">${b.id}</span><span class="tt">${esc(b.title)}</span><span>${sevPill(b.sev)}</span></div>`).join('')}</div></details>`).join('')}</div></div>`;
+}
+
+/* ---------------- cards ---------------- */
+function openItem(id) {
+  const b = App.items[id]; if (!b) return;
+  const head = `<div class="hp-head"><div class="row">${App.kind(b.type, true)}<span class="muted">${t('ty_' + b.type)}</span><span class="id">${b.id}</span>${sevPill(b.sev)}</div><div class="hp-title">${esc(b.title)}${App.enMark()}</div></div>`;
+  let main = b.note ? `<div class="hp-sec" style="margin-top:0"><h3>${t('f_note')}${App.enMark()}</h3><p class="hp-why">${App.inline(b.note)}</p></div>` : '';
+  if (b.anchors && b.anchors.length) main += `<div class="hp-sec"><h3>${t('f_where')}</h3><ul class="mono-list">${b.anchors.map((a) => `<li>${esc(a)}</li>`).join('')}</ul></div>`;
+  if (b.src) main += `<div class="hp-sec"><h3>${t('f_src')}</h3><div class="subtle" style="word-break:break-all">${esc(b.src)}</div></div>`;
+  const side = `<div class="hp-box"><h4>${t('f_status')}</h4><dl class="kv2"><dt>${t('f_state')}</dt><dd>${t('is_' + b.state)}</dd><dt>${t('f_tri')}</dt><dd>${triLabel(b)}</dd>
+    ${b.sprint ? `<dt>${t('f_sprint')}</dt><dd><span class="chip" data-open="${esc(b.sprint)}">${esc(b.sprint)}</span></dd>` : ''}
+    <dt>${t('f_sev')}</dt><dd>${b.sev ? t('sv_' + b.sev) : '—'}</dd><dt>${t('f_at')}</dt><dd>${App.fmtDate(b.at)}</dd>${b.est ? `<dt>${t('f_est')}</dt><dd>${esc(b.est)}</dd>` : ''}</dl></div>`;
+  App.showModal(head, main, side);
+}
+function openDecision(id) {
+  const d = App.decisionsMap[id]; if (!d) return;
+  const head = `<div class="hp-head"><div class="row"><span class="id">${d.id}</span>${areas(d).map((a) => `<span class="area">${esc(a)}</span>`).join('')}</div><div class="hp-title">${esc(d.title)}${App.enMark()}</div></div>`;
+  let main = `<div class="hp-sec" style="margin-top:0"><h3>${t('d_decision')}</h3><p class="hp-why">${App.inline(d.Decision || '')}</p></div>`;
+  if (d.Why) main += `<div class="hp-sec"><h3>${t('d_why')}</h3><p>${App.inline(d.Why)}</p></div>`;
+  if (d.Rejected) main += `<div class="hp-sec"><h3>${t('d_rejected')}</h3><p>${App.inline(d.Rejected)}</p></div>`;
+  const ag = /^yes/i.test(d['Against recommendation'] || '');
+  const side = `<div class="hp-box ${ag ? 'you' : ''}"><h4>${t('f_status')}</h4><dl class="kv2"><dt>${t('d_at')}</dt><dd>${App.fmtDate(d.at)}</dd><dt>${t('d_by')}</dt><dd>${esc(t('by_' + d.by))}</dd>
+    <dt>${t('d_against')}</dt><dd>${ag ? '⚠ ' + esc(d['Against recommendation']) : t('no')}</dd></dl></div>`;
+  App.showModal(head, main, side);
+}
+document.addEventListener('click', (e) => {
+  if (e.target.closest('[data-open]')) return;
+  const it = e.target.closest('[data-item]'); if (it) return openItem(it.dataset.item);
+  const pd = e.target.closest('[data-pd]'); if (pd) return openDecision(pd.dataset.pd);
+});
+
+App.init({
+  sketch: '003 · backlog i decyzje', tab: 'backlog', tabSketch: { roadmap: '001/002', backlog: 'here', decisions: 'here', history: '004' },
+  variants: [
+    { id: 'a', label: 'A: Tabela z filtrami (backlog Jiry)', render: renderA },
+    { id: 'b', label: 'B: Grupy z licznikami (GitHub Projects)', winner: true, render: renderB },
+  ],
+});
+// keep the search box focused while typing: re-render only the list part
+refresh = () => {
+  const box = document.activeElement, pos = box && box.selectionStart;
+  App.render();
+  const again = document.querySelector(`#variant-${App.active} input[type=search]`);
+  if (again) { again.focus(); try { again.setSelectionRange(pos, pos); } catch {} }
+};
+</script>
+</body>
+</html>

@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Szkic 005: podgląd sprintu na żywo</title>
+<link rel="stylesheet" href="../../../dwmt/templates/view/view.css">
+<style>
+/* Sketch chrome (not part of the product) */
+.sk-bar { background: #1d2125; color: #c7d1db; font-size: 12px; padding: 6px 16px; display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; }
+.sk-bar b { color: #fff; }
+.sk-bar .grp { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.sk-bar button { border: 1px solid #4b5560; background: transparent; color: inherit; border-radius: 4px; padding: 2px 8px; cursor: pointer; font-size: 12px; }
+.sk-bar button.on { background: #579dff; border-color: #579dff; color: #0b1220; font-weight: 600; }
+
+/* Live indicator */
+.live { display: inline-flex; align-items: center; gap: 6px; font-size: var(--text-xs); font-weight: 600; color: var(--st-running); white-space: nowrap; }
+.live i { width: 8px; height: 8px; border-radius: 50%; background: currentColor; animation: pulse 1.6s infinite; flex: none; }
+.live.wait { color: var(--st-done); }
+.live.stale, .live.stall { color: var(--color-text-subtle); }
+.live.stale i, .live.stall i { animation: none; }
+@keyframes pulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, currentColor 55%, transparent); } 70% { box-shadow: 0 0 0 6px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
+@media (prefers-reduced-motion: reduce) { .live i, .feed li.new { animation: none; } }
+
+/* Segmented progress (one segment per task) */
+.segs { display: flex; gap: 2px; margin: 6px 0 4px; }
+.segs span { flex: 1; height: 5px; border-radius: 2px; background: var(--color-border); }
+.segs span.done { background: var(--st-ready); }
+.segs span.run { background: var(--st-running); }
+.segs span.wait { background: var(--st-done); }
+.bcard .now { font-size: var(--text-sm); color: var(--color-text); display: flex; justify-content: space-between; gap: 8px; }
+.bcard .now .num { color: var(--color-text-muted); }
+
+/* Steps */
+.steps { list-style: none; margin: 0; padding: 0; }
+.steps > li { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 2px 10px; padding: 7px 0; border-bottom: 1px solid var(--color-border); align-items: start; }
+.steps > li:last-child { border-bottom: 0; }
+.st-ic { width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 700; margin-top: 1px; }
+.st-ic.done { background: var(--st-ready-bg); color: var(--st-ready); }
+.st-ic.run { background: var(--st-running); color: #fff; }
+.st-ic.wait { background: var(--st-done-bg); color: var(--st-done); }
+.st-ic.todo { border: 1.5px solid var(--color-border-strong); color: var(--color-text-subtle); }
+.st-name { font-weight: 500; overflow-wrap: anywhere; }
+.st-meta { font-size: var(--text-sm); color: var(--color-text-muted); text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.st-note { grid-column: 2 / 4; font-size: var(--text-sm); color: var(--color-text-muted); }
+.steps > li.todo .st-name { color: var(--color-text-muted); font-weight: 400; }
+.steps > li.cur { background: var(--st-running-bg); margin: 0 -8px; padding-left: 8px; padding-right: 8px; border-radius: var(--radius-md); border-bottom-color: transparent; }
+.steps > li.cur.waiting { background: var(--st-done-bg); }
+.sub { grid-column: 2 / 4; display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.sub span { font-size: var(--text-xs); padding: 1px 7px; border-radius: var(--radius-full); border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text-muted); white-space: nowrap; }
+.sub span.done { color: var(--st-ready); border-color: color-mix(in srgb, var(--st-ready) 40%, transparent); }
+.sub span.run { color: #fff; background: var(--st-running); border-color: var(--st-running); font-weight: 600; }
+.sub span.wait { color: var(--st-done); background: var(--st-done-bg); border-color: color-mix(in srgb, var(--st-done) 40%, transparent); font-weight: 600; }
+.sub span.bad { color: var(--kind-bug); border-color: color-mix(in srgb, var(--kind-bug) 45%, transparent); font-weight: 600; }
+
+/* Activity feed */
+.feed-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px; }
+.feed-head h3 { margin: 0; }
+.feed { list-style: none; margin: 0; padding: 0; font-size: var(--text-sm); }
+.feed li { display: grid; grid-template-columns: 62px minmax(0, 1fr); gap: 8px; padding: 4px 0; border-bottom: 1px dashed var(--color-border); }
+.feed li:last-child { border-bottom: 0; }
+.feed .tm { color: var(--color-text-subtle); font-variant-numeric: tabular-nums; font-family: var(--font-mono); font-size: var(--text-xs); padding-top: 2px; }
+.feed .who { font-weight: 600; }
+.feed .obj { font-family: var(--font-mono); font-size: var(--text-xs); overflow-wrap: anywhere; color: var(--color-text-muted); }
+.feed li.ms .what { font-weight: 600; }
+.feed li.ms .tm { color: var(--color-text-muted); }
+.feed li.new { animation: flash 1.4s ease; }
+@keyframes flash { from { background: var(--st-running-bg); } to { background: transparent; } }
+.feed-empty { font-size: var(--text-sm); color: var(--color-text-subtle); padding: 6px 0; }
+
+/* Cost bar: spent (fill) against the start price range (band), naive forecast (dashed tick) */
+.cbar { position: relative; height: 14px; background: var(--color-hover); border-radius: 3px; margin: 8px 0 20px; }
+.cbar .band { position: absolute; top: 0; bottom: 0; background: var(--viz-band); }
+.cbar .fill { position: absolute; left: 0; top: 3px; bottom: 3px; background: var(--viz-1); border-radius: 2px; transition: width .6s ease; }
+.cbar .fc { position: absolute; top: -3px; bottom: -3px; width: 0; border-left: 2px dashed var(--color-text-muted); }
+.cbar .lbl { position: absolute; top: 17px; font-size: var(--text-xs); color: var(--color-text-subtle); transform: translateX(-50%); white-space: nowrap; }
+
+/* Alerts */
+.alert { border-radius: var(--radius-md); padding: 8px 12px; font-size: var(--text-sm); margin-bottom: 12px; border: 1px solid; line-height: 1.5; }
+.alert b { display: block; margin-bottom: 2px; }
+.alert.bad { color: var(--kind-bug); background: color-mix(in srgb, var(--kind-bug) 9%, var(--color-surface)); border-color: color-mix(in srgb, var(--kind-bug) 40%, transparent); }
+.alert.info { color: var(--st-done); background: var(--st-done-bg); border-color: color-mix(in srgb, var(--st-done) 40%, transparent); }
+.alert.mute { color: var(--color-text-muted); background: var(--color-surface-2); border-color: var(--color-border); }
+.hp-box.you.ask { border-color: color-mix(in srgb, var(--st-done) 60%, transparent); }
+.hp-box.you ol { margin: 4px 0 0; padding-left: 18px; }
+.hp-box.you ol li { margin: 3px 0; }
+
+/* Variant B: "Now" strip under the header, on every tab */
+.now-strip { background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+.now-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding: 8px 20px; max-width: 1680px; margin: 0 auto; font-size: var(--text-sm); }
+.now-row .t { font-weight: 600; font-size: var(--text-base); min-width: 0; overflow-wrap: anywhere; }
+.now-row .segs { width: 150px; margin: 0; }
+.now-row .sep { width: 1px; height: 16px; background: var(--color-border); }
+.now-row .push { margin-left: auto; }
+.now-row.ask { background: var(--st-done-bg); }
+.now-row.bad { background: color-mix(in srgb, var(--kind-bug) 9%, var(--color-surface)); }
+.now-panel { border-top: 1px solid var(--color-border); background: var(--color-surface-2); }
+.now-panel .in { max-width: 1680px; margin: 0 auto; padding: 12px 20px 16px; display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 20px; }
+@media (max-width: 900px) { .now-panel .in { grid-template-columns: minmax(0, 1fr); } .now-row .sep { display: none; } .now-row .push { margin-left: 0; } }
+.gantt { display: flex; gap: 2px; height: 30px; margin: 8px 0 4px; }
+.gantt div { border-radius: 3px; font-size: var(--text-xs); display: flex; align-items: center; justify-content: center; overflow: hidden; white-space: nowrap; min-width: 22px; padding: 0 4px; }
+.gantt .done { background: var(--st-ready-bg); color: var(--st-ready); border: 1px solid color-mix(in srgb, var(--st-ready) 35%, transparent); }
+.gantt .run { background: var(--st-running); color: #fff; font-weight: 600; }
+.gantt .wait { background: var(--st-done-bg); color: var(--st-done); font-weight: 600; border: 1px solid color-mix(in srgb, var(--st-done) 40%, transparent); }
+.gantt .todo { border: 1px dashed var(--color-border-strong); color: var(--color-text-subtle); }
+.gantt-axis { display: flex; justify-content: space-between; font-size: var(--text-xs); color: var(--color-text-subtle); }
+
+/* Variant C: own tab */
+.app-tab .live { margin-left: 6px; }
+.lv-top { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; margin-bottom: 4px; }
+.lv-top .t { font-size: var(--text-xl); font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+.lv-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 12px 0 16px; }
+@media (max-width: 1000px) { .lv-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 420px) { .lv-kpis { grid-template-columns: minmax(0, 1fr); } }
+.lv-grid { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 16px; align-items: start; }
+@media (max-width: 900px) { .lv-grid { grid-template-columns: minmax(0, 1fr); } }
+.lv-side { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.steps .nest { grid-column: 2 / 4; margin-top: 8px; padding: 8px 10px; border-radius: var(--radius-md); background: var(--color-surface); border: 1px solid var(--color-border); }
+.kpi .value.small { font-size: var(--text-md); }
+</style>
+</head>
+<body>
+<div class="sk-bar">
+  <span><b>Szkic 005</b> podgląd sprintu na żywo · dane przykładowe</span>
+  <span class="grp">Wariant:
+    <button type="button" data-v="A">A · Na karcie sprintu</button>
+    <button type="button" data-v="B">B · Pasek „Teraz”</button>
+    <button type="button" data-v="C">C · Zakładka „Na żywo”</button></span>
+  <span class="grp">Sytuacja:
+    <button type="button" data-s="work">Praca trwa</button>
+    <button type="button" data-s="ask">Pytanie do Ciebie</button>
+    <button type="button" data-s="red">Czerwone testy</button>
+    <button type="button" data-s="stall">Przestój</button>
+    <button type="button" data-s="stale">Brak świeżych danych</button></span>
+</div>
+<div id="app"><header class="app-header" id="app-header"></header><div id="strip"></div><main id="page"></main></div>
+<div class="overlay" id="overlay"></div>
+<script>
+(function () {
+  'use strict';
+  const qs = new URLSearchParams(location.search);
+  const P = { v: qs.get('v') || 'A', s: qs.get('s') || 'work', feedAll: true, panel: qs.get('panel') !== '0', tab: 'live' };
+
+  // ---------- sample data (what the script would have during a run: run state, plan, events, transcripts) ----------
+  const SPRINT = {
+    id: 'import-csv', kind: 'feature', title: 'Import zamówień z pliku CSV',
+    why: 'Sklep wgrywa zamówienia z arkusza zamiast przepisywać je ręcznie; błędne wiersze widać przed zapisem.',
+    start: '13:02', price: [9, 14], tasks: 5, run: '2026-10-15-import-csv', branch: 'dwmt/import-csv', mode: 'architekt (pełny)',
+  };
+  // spent so far per step in M tokens; durations in minutes (current step grows live)
+  const BASE = [
+    { k: 'plan', name: 'Plan sprintu', who: 'Architekt', st: 'done', min: 38, m: 1.4, note: '5 zadań · 1 pytanie, odpowiedziane 13:31' },
+    { k: 1, name: 'Odczyt pliku CSV i sprawdzanie kolumn', st: 'done', min: 32, m: 0.9, note: 'recenzja bez uwag · zapisane 14:12' },
+    { k: 2, name: 'Zapis zamówień i wykrywanie duplikatów', st: 'done', min: 37, m: 1.3, note: 'recenzja: 1 uwaga, poprawiona · zapisane 14:49' },
+    { k: 3, name: 'Okno importu z podglądem błędnych wierszy', st: 'run', min: 27, m: 0.7 },
+    { k: 4, name: 'Raport z importu do pobrania', st: 'todo' },
+    { k: 5, name: 'Testy end-to-end importu', st: 'todo' },
+    { k: 'batch', name: 'Poprawki zbiorcze', st: 'todo', note: '2 drobne uwagi odłożone do końca' },
+    { k: 'goal', name: 'Sprawdzenie celu sprintu', st: 'todo' },
+    { k: 'finish', name: 'Scalenie: pełne testy i połączenie z main', st: 'todo' },
+  ];
+  const SUBS = {
+    work: [['Pisanie kodu', 'done', '22 min'], ['Testy', 'done', '48 zielonych'], ['Recenzja', 'run', ''], ['Zapis', 'todo', '']],
+    ask: [['Pisanie kodu', 'wait', 'czeka na Ciebie'], ['Testy', 'todo', ''], ['Recenzja', 'todo', ''], ['Zapis', 'todo', '']],
+    red: [['Pisanie kodu', 'done', '22 min'], ['Testy', 'bad', '2 z 50 czerwone'], ['Poprawki', 'run', 'próba 1'], ['Recenzja', 'todo', ''], ['Zapis', 'todo', '']],
+    stall: [['Pisanie kodu', 'done', '22 min'], ['Testy', 'done', '48 zielonych'], ['Recenzja', 'run', 'brak postępu'], ['Zapis', 'todo', '']],
+    stale: [['Pisanie kodu', 'done', '22 min'], ['Testy', 'done', '48 zielonych'], ['Recenzja', 'run', ''], ['Zapis', 'todo', '']],
+  };
+  const PHASE = { work: 'Recenzja', ask: 'Czeka na Ciebie', red: 'Poprawki po testach', stall: 'Recenzja', stale: 'Recenzja' };
+  const QUESTIONS = ['Czy błędny wiersz ma zatrzymać cały import, czy pominąć tylko ten wiersz?', 'Czy zamówienie o istniejącym numerze nadpisuje stare, czy trafia na listę duplikatów?'];
+
+  const FEED0 = [
+    ['15:16:02', 'Recenzent', 'czyta', 'frontend/src/orders/ImportDialog.tsx'],
+    ['15:15:41', 'Recenzent', 'czyta', 'frontend/src/orders/importErrors.ts'],
+    ['15:15:20', 'Recenzent', 'uruchamia', 'npm test -- orders/import'],
+    ['15:14:58', 'Recenzent', 'zaczyna recenzję zadania 3', '', 'ms'],
+    ['15:14:51', 'Skrypt', 'testy zadania 3: 48 zielonych', '', 'ms'],
+    ['15:10:12', 'Wykonawca', 'edytuje', 'frontend/src/orders/ImportDialog.tsx'],
+    ['15:09:47', 'Wykonawca', 'dodaje', 'frontend/src/orders/ImportDialog.test.tsx'],
+    ['14:49:20', 'Skrypt', 'zadanie 2 zapisane (commit 8b04e7d)', '', 'ms'],
+    ['14:40:05', 'Recenzent', 'zadanie 2: 1 uwaga do poprawy', '', 'ms'],
+    ['14:12:30', 'Skrypt', 'zadanie 1 zapisane (commit 3f9a1c2)', '', 'ms'],
+    ['13:40:12', 'Architekt', 'plan gotowy: 5 zadań', '', 'ms'],
+    ['13:31:44', 'Odpowiedź od Ciebie', 'w sprawie formatu dat', '', 'ms'],
+  ];
+  const NEXT = [
+    ['Recenzent', 'czyta', 'backend/src/main/java/shop/orders/CsvImportService.java'],
+    ['Recenzent', 'szuka', '„parseRow” w backend/src'],
+    ['Recenzent', 'czyta', 'frontend/src/orders/useImportPreview.ts'],
+    ['Recenzent', 'uruchamia', 'npm run lint -- src/orders'],
+    ['Recenzent', 'czyta', 'docs/product/sprints/import-csv.md'],
+    ['Recenzent', 'czyta', 'frontend/src/orders/ImportDialog.module.css'],
+  ];
+  const NEXT_RED = [
+    ['Wykonawca', 'czyta', 'wynik testów: ImportDialog.test.tsx (2 czerwone)'],
+    ['Wykonawca', 'edytuje', 'frontend/src/orders/useImportPreview.ts'],
+    ['Wykonawca', 'uruchamia', 'npm test -- orders/import'],
+    ['Wykonawca', 'edytuje', 'frontend/src/orders/ImportDialog.tsx'],
+  ];
+  const FEED_ASK = [
+    ['15:04:10', 'Wykonawca', '2 pytania do Ciebie, praca nad zadaniem 3 wstrzymana', '', 'ms'],
+    ['15:03:52', 'Wykonawca', 'czyta', 'docs/product/decisions.md'],
+    ['15:03:31', 'Wykonawca', 'czyta', 'backend/src/main/java/shop/orders/OrderRepository.java'],
+    ...FEED0.slice(7),
+  ];
+  const FEED_RED = [
+    ['15:15:02', 'Skrypt', 'testy zadania 3: 2 z 50 czerwone, wraca do wykonawcy', '', 'ms'],
+    ['15:10:12', 'Wykonawca', 'edytuje', 'frontend/src/orders/ImportDialog.tsx'],
+    ...FEED0.slice(6),
+  ];
+
+  // ---------- live state ----------
+  let feed = [], ago = 2, extra = 0, clock = 15 * 3600 + 16 * 60 + 10, nextIdx = 0, newKey = null;
+  function reset() {
+    ago = P.s === 'stale' ? 184 : P.s === 'stall' ? 2 : 2; extra = 0; nextIdx = 0; newKey = null;
+    clock = 15 * 3600 + 16 * 60 + 10;
+    feed = (P.s === 'ask' ? FEED_ASK : P.s === 'red' ? FEED_RED : FEED0).map((x) => x.slice());
+  }
+  const pad = (n) => String(n).padStart(2, '0');
+  const hms = (s) => `${pad(Math.floor(s / 3600))}:${pad(Math.floor(s / 60) % 60)}:${pad(s % 60)}`;
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const fmtM = (x) => x.toFixed(1).replace('.', ',');
+  const elapsed = () => 134 + Math.floor(extra / 60);
+  const fmtDur = (min) => (min >= 60 ? `${Math.floor(min / 60)} h ${min % 60} min` : `${min} min`);
+  function steps() {
+    return BASE.map((s) => (s.k === 3 ? { ...s, st: P.s === 'ask' ? 'wait' : 'run', min: s.min + Math.floor(extra / 60), m: s.m + (P.s === 'ask' || P.s === 'stall' || P.s === 'stale' ? 0 : extra * 0.004) } : s));
+  }
+  const spent = () => steps().reduce((a, s) => a + (s.m || 0), 0);
+  const forecast = () => (spent() / 2) * SPRINT.tasks;
+  const doneTasks = 2;
+  const liveCls = () => ({ ask: 'wait', stall: 'stall', stale: 'stale' }[P.s] || '');
+  function liveLabel() {
+    if (P.s === 'ask') return 'czeka na Ciebie · 12 min';
+    if (P.s === 'stall') return 'przestój? · nic nie pracuje od 34 min';
+    if (P.s === 'stale') return `brak świeżych danych od ${Math.floor(ago / 60)} min`;
+    return `na żywo · ${ago} s temu`;
+  }
+  const live = () => `<span class="live ${liveCls()}" id="live-ind"><i></i><span>${esc(liveLabel())}</span></span>`;
+  const pill = (st, label) => `<span class="pill ${st}">${esc(label)}</span>`;
+  const kind = () => '<span class="kind feature" title="funkcja">F</span>';
+  const segs = () => `<div class="segs" aria-label="zadania: ${doneTasks} z ${SPRINT.tasks} gotowe">${Array.from({ length: SPRINT.tasks }, (_, i) => `<span class="${i < doneTasks ? 'done' : i === doneTasks ? (P.s === 'ask' ? 'wait' : 'run') : ''}"></span>`).join('')}</div>`;
+  const nowLine = () => `Zadanie 3 z ${SPRINT.tasks} · ${PHASE[P.s]}`;
+  const endEta = () => (P.s === 'ask' ? 'po Twojej odpowiedzi' : 'ok. 18:10');
+
+  // ---------- shared live blocks ----------
+  function stepsHtml(nestFeed) {
+    const ic = { done: '✓', run: '●', wait: '!', todo: '' };
+    return `<ol class="steps">${steps().map((s) => {
+      const cur = s.st === 'run' || s.st === 'wait';
+      const label = typeof s.k === 'number' ? `<span class="subtle">Zadanie ${s.k} · </span>${esc(s.name)}` : esc(s.name);
+      const meta = s.st === 'todo' ? '' : `${fmtDur(s.min)}${s.m ? ` · ${fmtM(s.m)} mln` : ''}`;
+      let extraHtml = '';
+      if (cur) extraHtml = `<div class="sub">${SUBS[P.s].map(([n, st, d]) => `<span class="${st}">${st === 'done' ? '✓ ' : st === 'run' ? '● ' : st === 'wait' ? '! ' : st === 'bad' ? '✗ ' : ''}${esc(n)}${d ? ` · ${esc(d)}` : ''}</span>`).join('')}</div>`;
+      if (cur && nestFeed) extraHtml += `<div class="nest">${feedHtml(5)}</div>`;
+      return `<li class="${s.st === 'todo' ? 'todo' : ''} ${cur ? 'cur' : ''} ${s.st === 'wait' ? 'waiting' : ''}"><span class="st-ic ${s.st}">${ic[s.st]}</span><span class="st-name">${label}</span><span class="st-meta">${meta}</span>
+        ${s.note ? `<span class="st-note">${esc(s.note)}</span>` : ''}${extraHtml}</li>`;
+    }).join('')}</ol>`;
+  }
+  function feedHtml(n) {
+    const rows = feed.filter((x) => P.feedAll || x[4] === 'ms').slice(0, n);
+    if (!rows.length) return '<div class="feed-empty">Brak zdarzeń.</div>';
+    return `<ul class="feed">${rows.map((x) => `<li class="${x[4] || ''} ${x[0] === newKey ? 'new' : ''}"><span class="tm">${esc(x[0])}</span><span><span class="who">${esc(x[1])}</span> <span class="what">${esc(x[2])}</span>${x[3] ? `<div class="obj">${esc(x[3])}</div>` : ''}</span></li>`).join('')}</ul>`;
+  }
+  const feedToggle = () => `<span class="seg" role="group" aria-label="filtr"><button type="button" data-feed="all" class="${P.feedAll ? 'on' : ''}">Wszystko</button><button type="button" data-feed="ms" class="${P.feedAll ? '' : 'on'}">Tylko ważne</button></span>`;
+  const feedSec = (n, title = 'Co się dzieje') => `<div class="hp-sec"><div class="feed-head"><h3>${esc(title)}</h3>${feedToggle()}</div><div id="feed-box" data-n="${n}">${feedHtml(n)}</div></div>`;
+
+  function youBox() {
+    if (P.s === 'ask') return `<div class="hp-box you ask"><h4>Od Ciebie</h4><div><b>Czekają 2 pytania od 12 min.</b> Odpowiedz w rozmowie z PO; praca nad zadaniem 3 stoi do odpowiedzi.</div><ol>${QUESTIONS.map((q) => `<li>${esc(q)}</li>`).join('')}</ol></div>`;
+    if (P.s === 'stall') return `<div class="hp-box you"><h4>Od Ciebie</h4><div>Sprawdź, czy PO zareagował na alarm. Jeśli nie, napisz mu: „co ze sprintem import-csv?”.</div></div>`;
+    return `<div class="hp-box you ok"><h4>Od Ciebie</h4><div>Nic teraz. Następny raz: przegląd po scaleniu (prognoza ${esc(endEta())}).</div></div>`;
+  }
+  function alertHtml() {
+    if (P.s === 'stall') return '<div class="alert bad"><b>Prawdopodobnie przestój</b>Nic nie pracuje od 34 min, a sprint stoi na recenzji zadania 3: proces recenzenta zakończył się bez wyniku. PO dostał alarm.</div>';
+    if (P.s === 'red') return '<div class="alert info"><b>Czerwone testy w zadaniu 3</b>2 z 50 testów nie przechodzi (import pustego pliku). Wykonawca poprawia; to zwykły krok, nic od Ciebie.</div>';
+    if (P.s === 'stale') return '<div class="alert mute"><b>Strona nie dostaje nowych danych od 3 min</b>Komputer mógł zasnąć albo proces zapisujący stan się zakończył. Poniżej ostatni znany stan.</div>';
+    return '';
+  }
+  function costBox() {
+    const max = SPRINT.price[1] * 1.25, pc = (x) => `${Math.min(100, (x / max) * 100).toFixed(1)}%`;
+    const sp = spent(), fc = forecast();
+    return `<div class="hp-box"><h4>Koszt</h4><div class="line"><span>Zużyte</span><b class="num" id="cost-spent">${fmtM(sp)} mln</b></div>
+      <div class="cbar" role="img" aria-label="zużyte ${fmtM(sp)} mln, cena startu ${SPRINT.price[0]}–${SPRINT.price[1]} mln, prognoza ${fmtM(fc)} mln">
+        <div class="band" style="left:${pc(SPRINT.price[0])};width:calc(${pc(SPRINT.price[1])} - ${pc(SPRINT.price[0])})"></div>
+        <div class="fill" id="cost-fill" style="width:${pc(sp)}"></div><div class="fc" style="left:${pc(fc)}"></div>
+        <span class="lbl" style="left:${pc(SPRINT.price[0])}">${SPRINT.price[0]}</span><span class="lbl" style="left:${pc(SPRINT.price[1])}">${SPRINT.price[1]}</span></div>
+      <div class="line"><span>Cena startu</span><span class="num">${SPRINT.price[0]}–${SPRINT.price[1]} mln</span></div>
+      <div class="line"><span>Prognoza z tempa zadań</span><span class="num" style="white-space:nowrap">${fmtM(fc)} mln</span></div>
+      <div class="line"><span></span><span style="color:var(--st-ready);white-space:nowrap">✓ w cenie startu</span></div></div>`;
+  }
+  function timeBox() {
+    return `<div class="hp-box"><h4>Czas</h4><div class="line"><span>Start</span><span class="num">${SPRINT.start}</span></div>
+      <div class="line"><span>Trwa</span><b class="num" id="el">${fmtDur(elapsed())}</b></div>
+      <div class="line"><span>Zadania gotowe</span><span class="num">${doneTasks} z ${SPRINT.tasks}</span></div>
+      <div class="line"><span>Koniec (prognoza)</span><span class="num">${esc(endEta())}</span></div></div>`;
+  }
+  const techBox = () => `<details class="hp-tech"><summary>Szczegóły techniczne</summary><div class="dsec"><dl class="kv2"><dt>Przebieg</dt><dd>${SPRINT.run}</dd><dt>Gałąź</dt><dd>${SPRINT.branch}</dd><dt>Tryb</dt><dd>${SPRINT.mode}</dd><dt>Koszt według ról</dt><dd>plan 1,4 · pisanie 1,6 · recenzja 0,9 · sterowanie 0,4 mln</dd></dl></div></details>`;
+
+  // ---------- header and board ----------
+  function header() {
+    const tabs = [['roadmap', 'Roadmapa', 5], ['backlog', 'Backlog', 23], ['decisions', 'Decyzje', 9], ['history', 'Historia', 14]];
+    if (P.v === 'C') tabs.unshift(['live', 'Na żywo', null]);
+    const active = P.v === 'C' ? P.tab : 'roadmap';
+    return `<div class="app-top"><div class="app-logo" aria-hidden="true">dw</div><div class="app-title">sklep-demo<small>roadmapa produktu</small></div>
+      <div class="app-meta"><span>Dane: na bieżąco w trakcie sprintu</span><span class="seg" role="group"><button type="button" class="on">PL</button><button type="button">EN</button></span></div></div>
+      <nav class="app-tabs">${tabs.map(([k, l, n]) => `<button type="button" class="app-tab ${k === active ? 'active' : ''}" data-tab="${k}">${esc(l)}${n == null ? `<span class="live ${liveCls()}"><i></i></span>` : `<span class="count">${n}</span>`}</button>`).join('')}</nav>`;
+  }
+  function board() {
+    const card = (id, title, extra, cls = '', right = '') => `<div class="bcard ${cls}" data-open="${id}" role="button" tabindex="0"><div class="top"><span class="id">${id}</span>${kind()}<span class="right">${right}</span></div><div class="title">${esc(title)}</div>${extra}</div>`;
+    const runCard = card(SPRINT.id, SPRINT.title, `${segs()}<div class="now"><span>${esc(nowLine())}</span><span class="num">${fmtM(spent())} / ${SPRINT.price[0]}–${SPRINT.price[1]} mln</span></div><div class="foot" style="margin-top:4px">${live()}</div>`, 'running', '<span class="badge run">w toku</span>');
+    const col = (c, label, hint, n, body) => `<section class="col c-${c}"><div class="col-head">${pill(c, label)}<span class="n">${n}</span></div><div class="col-hint">${hint}</div><div class="col-body">${body}</div></section>`;
+    return `<div class="board">
+      ${col('draft', 'Draft', 'pomysł, jeszcze niejasny', 2, card('faktury-pdf', 'Faktury PDF do zamówień', '', 'draft') + card('szukaj-nip', 'Wyszukiwanie klientów po NIP', '', 'draft'))}
+      ${col('todo', 'Do zrobienia', 'wiadomo o co chodzi; PO bierze od góry', 2, card('statusy-wysylki', 'Statusy wysyłki od kuriera', '<div class="foot"><span class="badge go">✓ może iść bez Ciebie</span></div>', 'next', '<span class="badge next">następny</span>') + card('rabaty-b2b', 'Rabaty dla klientów hurtowych', '<div class="foot"><span class="badge need">makiety</span></div>'))}
+      ${col('inprogress', 'W toku', 'zlecony albo trwa', 1, runCard)}
+      ${col('review', 'Czeka na przegląd', 'UAT albo czytanie kodu', 1, card('koszyk-mobile', 'Koszyk na telefonie', '', 'compact'))}
+    </div>`;
+  }
+
+  // ---------- variant A: live section inside the sprint card ----------
+  function modalA() {
+    const head = `<div class="hp-head"><div class="row">${pill('inprogress', 'W toku')}<span class="id">${SPRINT.id}</span>${kind()}${live()}</div><div class="hp-title">${esc(SPRINT.title)}</div></div>`;
+    const main = `${alertHtml()}<p class="hp-why">${esc(SPRINT.why)}</p><div class="hp-sec"><h3>Postęp</h3>${stepsHtml(false)}</div>${feedSec(8)}${techBox()}`;
+    const side = `${youBox()}${timeBox()}${costBox()}`;
+    return `<div class="modal-wrap" id="modal-wrap" style="pointer-events:auto"><div class="modal open" role="dialog" aria-modal="true"><div class="m-head"><div>${head}</div><button type="button" class="m-close" data-close="1" aria-label="Zamknij">×</button></div>
+      <div class="m-body"><div style="min-width:0">${main}</div><div class="hp-side">${side}</div></div></div></div>`;
+  }
+
+  // ---------- variant B: strip on every tab + expandable panel ----------
+  function stripB() {
+    const tone = P.s === 'ask' ? 'ask' : P.s === 'stall' ? 'bad' : '';
+    const you = P.s === 'ask' ? '<b class="warn">Od Ciebie: 2 pytania</b>' : P.s === 'stall' ? '<b class="warn">Przestój: sprawdź PO</b>' : '<span class="muted">Od Ciebie: nic</span>';
+    const all = steps(), total = all.reduce((a, s) => a + (s.min || 25), 0);
+    const g = all.map((s) => {
+      const lbl = typeof s.k === 'number' ? `Z${s.k}` : { plan: 'Plan', batch: 'Popr.', goal: 'Cel', finish: 'Scalenie' }[s.k];
+      return `<div class="${s.st}" style="flex:${s.min || 25}" title="${esc(s.name)}${s.min ? ' · ' + fmtDur(s.min) : ''}">${lbl}</div>`;
+    }).join('');
+    const panel = P.panel ? `<div class="now-panel"><div class="in"><div style="min-width:0">${alertHtml()}<h3 class="hp-sec" style="margin:0;font-size:var(--text-sm);color:var(--color-text-muted)">Przebieg w czasie</h3>
+        <div class="gantt">${g}</div><div class="gantt-axis"><span>${SPRINT.start}</span><span>teraz ${hms(clock).slice(0, 5)}</span><span>prognoza ${esc(endEta())}</span></div>
+        <div class="hp-sec"><h3>Kroki</h3>${stepsHtml(false)}</div></div>
+        <div class="hp-side">${youBox()}${costBox()}${feedSec(7)}</div></div></div>` : '';
+    return `<div class="now-strip"><div class="now-row ${tone}">${live()}<span class="id">${SPRINT.id}</span><span class="t">${esc(SPRINT.title)}</span><span class="sep"></span>
+      <span>${esc(nowLine())}</span>${segs()}<span class="sep"></span><span class="num">${fmtM(spent())} mln z ${SPRINT.price[0]}–${SPRINT.price[1]}</span><span class="sep"></span><span class="num" id="el">${fmtDur(elapsed())}</span><span class="sep"></span>${you}
+      <button type="button" class="link-btn push" data-panel="1">${P.panel ? 'Zwiń ▴' : 'Szczegóły ▾'}</button></div>${panel}</div>`;
+  }
+
+  // ---------- variant C: own tab ----------
+  function pageC() {
+    const kpi = (label, value, sub, small) => `<div class="kpi"><div class="label">${esc(label)}</div><div class="value ${small ? 'small' : ''}">${value}</div><div class="sub">${sub}</div></div>`;
+    return `<div class="page"><div class="lv-top">${pill('inprogress', 'W toku')}<span class="id">${SPRINT.id}</span><span class="t">${esc(SPRINT.title)}</span>${live()}</div>
+      <p class="hp-why muted" style="margin:0">${esc(SPRINT.why)}</p>
+      <div class="lv-kpis">${kpi('Teraz', esc(nowLine()), segs(), true)}${kpi('Zużyte', `${fmtM(spent())} mln`, `cena startu ${SPRINT.price[0]}–${SPRINT.price[1]} · prognoza ${fmtM(forecast())}`)}
+        ${kpi('Trwa', `<span id="el">${fmtDur(elapsed())}</span>`, `start ${SPRINT.start} · koniec ${esc(endEta())}`)}${kpi('Od Ciebie', P.s === 'ask' ? '<span class="warn">2 pytania</span>' : P.s === 'stall' ? '<span class="warn">sprawdź PO</span>' : 'nic', P.s === 'ask' ? 'czekają od 12 min' : 'następny raz: przegląd po scaleniu')}</div>
+      ${alertHtml()}
+      <div class="lv-grid"><div class="card2" style="min-width:0;padding:16px 20px"><h3>Przebieg</h3>${stepsHtml(true)}</div>
+        <div class="lv-side">${P.s === 'ask' || P.s === 'stall' ? youBox() : ''}${costBox()}<div class="hp-box"><h4>Ważne zdarzenia</h4>${(() => { const keep = P.feedAll; P.feedAll = false; const h = feedHtml(6); P.feedAll = keep; return h; })()}</div>
+        <div class="note-line">Gdy trwa kilka sprintów naraz, każdy ma tu swoją sekcję, jedna pod drugą.</div></div></div></div>`;
+  }
+
+  // ---------- render and live tick ----------
+  function render() {
+    document.querySelectorAll('.sk-bar [data-v]').forEach((b) => b.classList.toggle('on', b.dataset.v === P.v));
+    document.querySelectorAll('.sk-bar [data-s]').forEach((b) => b.classList.toggle('on', b.dataset.s === P.s));
+    document.getElementById('app-header').innerHTML = header();
+    document.getElementById('strip').innerHTML = P.v === 'B' ? stripB() : '';
+    const mw = document.getElementById('modal-wrap'); if (mw) mw.remove();
+    document.getElementById('overlay').classList.remove('open');
+    document.body.classList.remove('modal-open');
+    if (P.v === 'C' && P.tab === 'live') document.getElementById('page').innerHTML = pageC();
+    else document.getElementById('page').innerHTML = `<div class="page">${board()}</div>`;
+    if (P.v === 'A' && P.panel) {
+      document.body.insertAdjacentHTML('beforeend', modalA());
+      document.getElementById('overlay').classList.add('open');
+      document.body.classList.add('modal-open');
+    }
+  }
+  function tick() {
+    if (P.s === 'stale') { ago += 1; } else if (P.s === 'work' || P.s === 'red') {
+      extra += 1; clock += 1; ago += 1;
+      if (extra % 3 === 0) {
+        const src = P.s === 'red' ? NEXT_RED : NEXT;
+        const [who, what, obj] = src[nextIdx % src.length]; nextIdx += 1;
+        newKey = hms(clock); feed.unshift([newKey, who, what, obj]); feed = feed.slice(0, 40); ago = 0;
+        const sy = window.scrollY, box = document.getElementById('modal-wrap'), by = box ? box.scrollTop : 0;
+        render();
+        window.scrollTo(0, sy); const b2 = document.getElementById('modal-wrap'); if (b2) b2.scrollTop = by;
+        return;
+      }
+    } else { clock += 1; }
+    document.querySelectorAll('#live-ind span').forEach((el) => { el.textContent = liveLabel(); });
+  }
+
+  document.addEventListener('click', (e) => {
+    const t = e.target.closest('button, [data-open], [data-close]');
+    if (!t) { if (e.target.id === 'modal-wrap') { P.panel = false; render(); } return; }
+    if (t.dataset.v) { P.v = t.dataset.v; P.panel = true; P.tab = 'live'; reset(); render(); }
+    else if (t.dataset.s) { P.s = t.dataset.s; reset(); render(); }
+    else if (t.dataset.feed) { P.feedAll = t.dataset.feed === 'all'; render(); }
+    else if (t.dataset.panel) { P.panel = !P.panel; render(); }
+    else if (t.dataset.close) { P.panel = false; render(); }
+    else if (t.dataset.tab && P.v === 'C') { P.tab = t.dataset.tab; render(); }
+    else if (t.dataset.open === SPRINT.id) { if (P.v === 'C') P.tab = 'live'; P.panel = true; render(); }
+  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && P.v === 'A' && P.panel) { P.panel = false; render(); } });
+  reset(); render();
+  if (qs.get('freeze') !== '1') setInterval(tick, 1000);
+})();
+</script>
+</body>
+</html>

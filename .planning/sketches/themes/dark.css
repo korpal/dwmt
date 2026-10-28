@@ -1,0 +1,70 @@
+/* Dark: same vocabulary as default.css, Azure DevOps dark feel. Tokens only. */
+:root {
+  --color-bg: #1d2125;
+  --color-surface: #22272b;
+  --color-surface-2: #282e33;
+  --color-hover: #2c333a;
+  --color-border: #38414a;
+  --color-border-strong: #4b5560;
+  --color-text: #c7d1db;
+  --color-text-muted: #9fadbc;
+  --color-text-subtle: #738496;
+  --color-primary: #579dff;
+  --color-primary-hover: #85b8ff;
+  --color-primary-bg: #1c2b41;
+  --color-accent: #fea362;
+  --color-danger: #f87168;
+  --color-success: #4bce97;
+  --color-warning: #e2b203;
+  --color-overlay: rgba(0, 0, 0, 0.5);
+
+  --st-topic: #9fadbc;   --st-topic-bg: #2c333a;
+  --st-notes: #b8acf6;   --st-notes-bg: #2b273f;
+  --st-ready: #4bce97;   --st-ready-bg: #1c3329;
+  --st-ordered: #6cc3e0; --st-ordered-bg: #1e3137;
+  --st-running: #85b8ff; --st-running-bg: #1c2b41;
+  --st-done: #fea362;    --st-done-bg: #38291e;
+  --st-closed: #4bce97;  --st-closed-bg: #1c3329;
+  --st-dropped: #738496; --st-dropped-bg: #2c333a;
+
+  --kind-bug: #f87168;
+  --kind-feature: #4bce97;
+  --kind-maint: #9fadbc;
+  --kind-debt: #fea362;
+  --kind-remark: #b8acf6;
+  --kind-idea: #e2b203;
+  --kind-change: #579dff;
+
+  /* Charts (dataviz reference palette: categorical slot 1 + sequential band) */
+  --viz-1: #3987e5;
+  --viz-band: #1c3a5e;
+  --viz-band-edge: #256abf;
+
+  --font-sans: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", sans-serif;
+  --font-mono: "Cascadia Mono", Consolas, "SFMono-Regular", monospace;
+  --text-xs: 0.6875rem;
+  --text-sm: 0.75rem;
+  --text-base: 0.8125rem;
+  --text-md: 0.875rem;
+  --text-lg: 1rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 2rem;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  --radius-sm: 3px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-full: 9999px;
+
+  --shadow-sm: 0 1px 1px rgba(0, 0, 0, 0.4), 0 0 1px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 8px -2px rgba(0, 0, 0, 0.5), 0 0 1px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 8px 24px -4px rgba(0, 0, 0, 0.6), 0 0 1px rgba(0, 0, 0, 0.6);
+}

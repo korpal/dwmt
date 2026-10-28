@@ -1,0 +1,521 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Szkic 006: miejsca pracy (worktree)</title>
+<link rel="stylesheet" href="../../../dwmt/templates/view/view.css">
+<style>
+/* Sketch chrome (not part of the product) */
+.sk-bar { background: #1d2125; color: #c7d1db; font-size: 12px; padding: 6px 16px; display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; }
+.sk-bar b { color: #fff; }
+.sk-bar .grp { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.sk-bar button { border: 1px solid #4b5560; background: transparent; color: inherit; border-radius: 4px; padding: 2px 8px; cursor: pointer; font-size: 12px; }
+.sk-bar button.on { background: #579dff; border-color: #579dff; color: #0b1220; font-weight: 600; }
+
+/* Workplace colour (one hue per workplace; main tree neutral) */
+.wp0 { --wpc: var(--color-text-subtle); }
+.wp1 { --wpc: var(--kind-remark); }
+.wp2 { --wpc: var(--kind-mockups); }
+.wp-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--wpc); flex: none; display: inline-block; }
+.wpb { display: inline-flex; align-items: center; gap: 4px; font-size: var(--text-xs); font-weight: 600; font-family: var(--font-mono); padding: 0 6px; border-radius: var(--radius-sm); color: var(--wpc); background: color-mix(in srgb, var(--wpc) 12%, var(--color-surface)); border: 1px solid color-mix(in srgb, var(--wpc) 40%, transparent); white-space: nowrap; }
+.wpb svg { width: 10px; height: 10px; }
+.pill.ready { color: var(--st-ready); background: var(--st-ready-bg); }
+.badge.done { color: var(--st-ready); background: var(--st-ready-bg); }
+.badge.held { color: var(--st-done); background: transparent; border: 1px dashed color-mix(in srgb, var(--st-done) 60%, transparent); }
+.badge.queue { color: var(--color-text-muted); background: var(--color-hover); }
+.badge.uat { color: var(--st-done); background: var(--st-done-bg); }
+.path { font-family: var(--font-mono); font-size: var(--text-sm); color: var(--color-text-muted); overflow-wrap: anywhere; }
+.ab { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ab .bad { color: var(--st-done); font-weight: 700; }
+.ok-t { color: var(--st-ready); }
+
+/* Reserved place for K10 actions (not built now) */
+.k10 { display: inline-flex; align-items: center; gap: 6px; border: 1.5px dashed var(--color-border-strong); border-radius: var(--radius-md); padding: 2px 8px; font-size: var(--text-sm); color: var(--color-text-muted); white-space: nowrap; cursor: default;
+  background: repeating-linear-gradient(135deg, transparent 0 6px, color-mix(in srgb, var(--color-border) 55%, transparent) 6px 7px); }
+.k10-tag { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--color-text-subtle); border: 1px solid var(--color-border-strong); border-radius: 3px; padding: 0 4px; background: var(--color-surface); white-space: nowrap; }
+.k10.block { display: flex; flex-direction: column; justify-content: center; text-align: center; white-space: normal; padding: 8px; gap: 4px; }
+body.no-k10 .k10 { display: none !important; }
+
+/* Live step on cards (same shape as the live card of sketch 005) */
+.lv { margin-top: 2px; }
+.lv .now { font-size: var(--text-sm); display: flex; justify-content: space-between; gap: 8px; min-width: 0; }
+.lv .now > span:first-child { min-width: 0; overflow-wrap: anywhere; }
+.lv .now .num { color: var(--color-text-muted); white-space: nowrap; }
+
+/* Push box */
+.push-box { border: 1px solid color-mix(in srgb, var(--st-ready) 45%, transparent); background: var(--st-ready-bg); border-radius: var(--radius-md); padding: 10px 12px; min-width: 0; }
+.push-box .ttl { font-weight: 600; color: var(--st-ready); display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; }
+.push-box .ttl .muted { font-weight: 400; }
+.push-box .after { font-size: var(--text-sm); color: var(--color-text-muted); margin-top: 6px; }
+.cmd { display: flex; align-items: center; gap: 8px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 3px 3px 3px 10px; margin-top: 8px; min-width: 0; }
+.cmd code { background: none; padding: 0; flex: 1; min-width: 0; font-size: var(--text-sm); color: var(--color-text); }
+.copy-btn { border: 1px solid var(--color-border); background: var(--color-surface-2); border-radius: var(--radius-sm); padding: 2px 8px; cursor: pointer; font-size: var(--text-sm); color: var(--color-text-muted); flex: none; }
+.copy-btn:hover { background: var(--color-hover); color: var(--color-text); }
+.push-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; }
+.push-row .cmd { margin-top: 0; flex: 1 1 280px; }
+
+/* Attention lines */
+.attn { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.attn li { font-size: var(--text-sm); color: var(--color-text); background: var(--st-done-bg); border: 1px solid color-mix(in srgb, var(--st-done) 35%, transparent); border-radius: var(--radius-md); padding: 6px 10px; line-height: 1.5; overflow-wrap: anywhere; }
+.attn li b { color: var(--st-done); }
+.attn li .muted { display: block; }
+
+/* Sequence chips (order of a workplace's sprints) */
+.seq { display: inline-flex; flex-wrap: wrap; gap: 4px; align-items: center; font-size: var(--text-xs); }
+.seq .s { display: inline-flex; gap: 3px; align-items: center; padding: 0 6px; border-radius: var(--radius-full); border: 1px solid var(--color-border); background: var(--color-surface); white-space: nowrap; font-family: var(--font-mono); color: var(--color-text-muted); cursor: pointer; }
+.seq .s.done { color: var(--st-ready); border-color: color-mix(in srgb, var(--st-ready) 40%, transparent); }
+.seq .s.run { color: var(--color-surface); background: var(--st-running); border-color: var(--st-running); font-weight: 600; }
+.seq .s.uat, .seq .s.held { color: var(--st-done); background: var(--st-done-bg); border-color: color-mix(in srgb, var(--st-done) 40%, transparent); font-weight: 600; }
+.seq .ar { color: var(--color-text-subtle); }
+
+/* ---------- Variant A: own tab ---------- */
+.app-tab.has-flag { display: inline-flex; align-items: center; }
+.tab-flag { white-space: nowrap; font-size: var(--text-xs); font-weight: 700; border-radius: var(--radius-full); padding: 0 6px; margin-left: 4px; }
+.tab-flag.ready { color: var(--st-ready); background: var(--st-ready-bg); }
+.tab-flag.attn { color: var(--st-done); background: var(--st-done-bg); }
+.wp-sum { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; padding: 8px 12px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); font-size: var(--text-sm); }
+.wp-sum b { font-variant-numeric: tabular-nums; }
+.wp-sum .sep { width: 1px; height: 18px; background: var(--color-border); }
+.wp-sum .k10 { margin-left: auto; }
+.wp-card { background: var(--color-surface); border: 1px solid var(--color-border); border-left: 4px solid var(--wpc); border-radius: var(--radius-lg); margin-top: 12px; padding: 12px 16px 14px; min-width: 0; }
+.wp-head { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; min-width: 0; }
+.wp-name { font-size: var(--text-xl); font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+.wp-head .acts { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
+.wp-facts { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px 16px; margin-top: 10px; padding: 8px 0; border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); }
+.fact { min-width: 0; }
+.fact .k { font-size: var(--text-xs); color: var(--color-text-muted); }
+.fact .v { font-size: var(--text-sm); font-weight: 500; overflow-wrap: anywhere; margin-top: 1px; }
+@media (max-width: 1150px) { .wp-facts { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .wp-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.lane-h { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; margin-top: 12px; font-size: var(--text-sm); color: var(--color-text-muted); font-weight: 600; }
+.lane-h .subtle { font-weight: 400; }
+.lane-h .k10 { margin-left: auto; }
+.lane { display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; margin-top: 6px; }
+.lt { flex: 1 1 210px; max-width: 330px; min-width: 0; background: var(--color-surface); border: 1px solid var(--color-border); border-left: 3px solid var(--color-border-strong); border-radius: var(--radius-md); padding: 8px 10px; box-shadow: var(--shadow-sm); cursor: pointer; }
+.lt:hover { box-shadow: var(--shadow-md); }
+.lt.done { border-left-color: var(--st-ready); }
+.lt.run { border-left-color: var(--st-running); }
+.lt.uat { border-left-color: var(--st-done); }
+.lt.queue { border-style: dashed; border-left-style: solid; box-shadow: none; }
+.lt.held { border-style: dashed; border-left: 3px solid var(--st-done); box-shadow: none; }
+.lt .top { display: flex; gap: 6px; align-items: center; min-width: 0; }
+.lt .top .id { overflow: hidden; text-overflow: ellipsis; }
+.lt .top .right { margin-left: auto; flex: none; }
+.lt .ordn { width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; font-size: var(--text-xs); font-weight: 700; flex: none; border: 1.5px solid var(--color-border-strong); color: var(--color-text-subtle); }
+.lt.done .ordn { background: var(--st-ready-bg); color: var(--st-ready); border-color: transparent; }
+.lt.run .ordn { background: var(--st-running); color: var(--color-surface); border-color: transparent; }
+.lt.uat .ordn, .lt.held .ordn { background: var(--st-done-bg); color: var(--st-done); border-color: transparent; }
+.lt .title { margin: 4px 0; font-weight: 500; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+.lt .meta { font-size: var(--text-sm); color: var(--color-text-muted); overflow-wrap: anywhere; }
+.lane .k10.block { flex: 0 1 170px; min-height: 76px; }
+.wp-card .push-box { margin-top: 12px; }
+.wp-main .wp-name { font-size: var(--text-md); }
+.wp-main .wp-head .muted { font-size: var(--text-sm); }
+
+/* ---------- Variant B: swimlanes on the board ---------- */
+.sl-cols { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; margin-top: 12px; padding: 0 1px; }
+.sl-cols > div { padding: 6px 8px; display: flex; flex-wrap: wrap; gap: 2px 6px; align-items: center; }
+.sl-cols .n { margin-left: auto; font-size: var(--text-sm); color: var(--color-text-muted); font-variant-numeric: tabular-nums; }
+.sl-cols .col-hint { flex-basis: 100%; padding: 0; }
+.sl { margin-top: 10px; border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface); overflow: hidden; }
+.sl-head { padding: 8px 12px; border-left: 4px solid var(--wpc); border-bottom: 1px solid var(--color-border); }
+.sl-row1 { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; font-size: var(--text-sm); min-width: 0; }
+.sl-row1 .nm { font-weight: 600; font-size: var(--text-md); display: inline-flex; gap: 6px; align-items: center; }
+.sl-row1 .sp { width: 1px; height: 14px; background: var(--color-border); }
+.sl-row1 .acts { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
+.sl-row2 { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; margin-top: 6px; font-size: var(--text-sm); color: var(--color-text-muted); }
+.sl-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--color-border); }
+.sl-cell { background: var(--color-surface-2); padding: 8px; display: flex; flex-direction: column; gap: 8px; min-width: 0; min-height: 44px; }
+.sl-cell .col-empty { padding: 2px 4px; }
+.sl-cell .cl { display: none; }
+.sl.collapsed .sl-grid { display: none; }
+.sl.collapsed .sl-head { border-bottom: 0; }
+@media (max-width: 900px) {
+  .sl-cols { display: none; }
+  .sl-grid { grid-template-columns: minmax(0, 1fr); }
+  .sl-cell .cl { display: block; }
+  .sl-cell.empty { display: none; }
+}
+
+/* ---------- Variant C: workplace as a property ---------- */
+.wpc-bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 6px var(--space-5); border-top: 1px solid var(--color-border); background: var(--color-surface-2); font-size: var(--text-sm); }
+.wpc-bar > .lbl { color: var(--color-text-muted); margin-right: 2px; }
+.wsel { border: 1px solid var(--color-border); background: var(--color-surface); border-radius: var(--radius-full); padding: 1px 10px; display: inline-flex; gap: 6px; align-items: center; cursor: pointer; font-size: var(--text-sm); color: var(--color-text); }
+.wsel:hover { border-color: var(--color-border-strong); }
+.wsel.on { border-color: var(--wpc, var(--color-primary)); box-shadow: inset 0 0 0 1px var(--wpc, var(--color-primary)); font-weight: 600; background: color-mix(in srgb, var(--wpc, var(--color-primary)) 8%, var(--color-surface)); }
+.wsel .n { color: var(--color-text-muted); font-weight: 400; font-variant-numeric: tabular-nums; }
+.wpc-bar .k10 { margin-left: auto; }
+.wpc-list { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); margin-bottom: 12px; }
+.wpc-row { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; padding: 7px 12px; border-bottom: 1px solid var(--color-border); border-left: 4px solid var(--wpc); font-size: var(--text-sm); min-width: 0; }
+.wpc-row:last-child { border-bottom: 0; }
+.wpc-row .nm { font-weight: 600; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+.wpc-row .nm:hover { text-decoration: underline; }
+.wpc-row .sp { width: 1px; height: 14px; background: var(--color-border); }
+.wpc-row .end { margin-left: auto; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.wpc-row .cmd { margin: 0; padding: 1px 2px 1px 8px; }
+.wpc-row .attn { flex-basis: 100%; margin-top: 2px; }
+.wpc-sel { background: var(--color-surface); border: 1px solid var(--color-border); border-left: 4px solid var(--wpc); border-radius: var(--radius-md); padding: 8px 12px; margin-bottom: 12px; }
+.wpc-sel .sl-row1 .nm { font-size: var(--text-md); }
+.wpc-sel .push-box { margin-top: 8px; }
+
+/* Sprint card additions */
+.hp-box .wnote { font-size: var(--text-sm); color: var(--color-text-muted); margin-top: 6px; }
+.hp-box .k10.block { margin-top: 8px; }
+</style>
+</head>
+<body>
+<div class="sk-bar">
+  <span><b>Szkic 006</b> miejsca pracy (worktree) · dane przykładowe</span>
+  <span class="grp">Wariant:
+    <button type="button" data-v="A">A · Zakładka „Miejsca pracy”</button>
+    <button type="button" data-v="B">B · Pasy na tablicy</button>
+    <button type="button" data-v="C">C · Znaczek na karcie + filtr</button></span>
+  <span class="grp">Sytuacja:
+    <button type="button" data-s="par">Dwa równolegle</button>
+    <button type="button" data-s="push">Gotowe do wypchnięcia</button>
+    <button type="button" data-s="attn">Wymaga uwagi</button>
+    <button type="button" data-s="none">Bez miejsc pracy</button></span>
+  <span class="grp">Miejsca na akcje K10:
+    <button type="button" data-k10="1">pokaż</button>
+    <button type="button" data-k10="0">ukryj</button></span>
+</div>
+<div id="app"><header class="app-header" id="app-header"></header><main id="page"></main></div>
+<div class="overlay" id="overlay"></div>
+<script>
+(function () {
+  'use strict';
+  const qs = new URLSearchParams(location.search);
+  const P = { v: qs.get('v') || 'A', s: qs.get('s') || 'par', k10: qs.get('k10') !== '0', tab: qs.get('tab') || null, w: qs.get('w') || 'all', open: qs.get('open') || null };
+  const FREEZE = qs.get('freeze') === '1';
+
+  // ---------- sample data (invented shop project; what the script would read: product files, workplace records, git, live.js) ----------
+  const S = {
+    'faktury-pdf': { kind: 'feature', title: 'Faktury PDF do zamówień' },
+    'szukaj-nip': { kind: 'feature', title: 'Wyszukiwanie klientów po NIP' },
+    'statusy-wysylki': { kind: 'feature', title: 'Statusy wysyłki od kuriera', why: 'Status przesyłki z systemu kuriera widać przy zamówieniu, bez logowania do panelu kuriera.' },
+    'rabaty-b2b': { kind: 'feature', title: 'Rabaty dla klientów hurtowych', why: 'Klient hurtowy po zalogowaniu widzi swoje ceny.' },
+    newsletter: { kind: 'feature', title: 'Zapis do newslettera w stopce', why: 'Klient zapisuje się w stopce sklepu; adres trafia na listę po potwierdzeniu e-mailem.' },
+    'koszyk-mobile': { kind: 'bugfix', title: 'Koszyk na telefonie', why: 'Na telefonie przycisk „Do kasy” był zasłonięty przez baner cookies.' },
+    blik: { kind: 'feature', title: 'Płatność BLIKIEM', why: 'Klient płaci BLIKIEM bez wychodzenia ze sklepu: wpisuje kod z aplikacji banku w oknie płatności.' },
+    zwroty: { kind: 'feature', title: 'Zwrot pieniędzy na kartę', why: 'Zwrot za anulowane zamówienie wraca na kartę klienta sam, bez ręcznego przelewu.' },
+    raty: { kind: 'feature', title: 'Raty 0% przy kasie', why: 'Przy kasie klient wybiera raty 0% u partnera; sklep dostaje całą kwotę od razu.' },
+    'stany-magazynu': { kind: 'feature', title: 'Stany magazynowe na karcie produktu', why: 'Karta produktu pokazuje, ile sztuk jest w magazynie, i ostrzega, gdy zostało mniej niż 5.' },
+    rezerwacje: { kind: 'feature', title: 'Rezerwacja towaru w koszyku na 30 min', why: 'Towar w koszyku jest zarezerwowany przez 30 minut, żeby nie sprzedać go dwa razy.' },
+  };
+  const run = (task, of, phase, spent, price) => ({ task, of, phase, spent, price });
+  const MAIN_BASE = [
+    { id: 'faktury-pdf', col: 'draft' }, { id: 'szukaj-nip', col: 'draft' },
+    { id: 'statusy-wysylki', col: 'todo', next: true, go: true }, { id: 'rabaty-b2b', col: 'todo', need: 'makiety' },
+  ];
+  const MAIN = {
+    par: [...MAIN_BASE, { id: 'newsletter', col: 'inprogress', run: run(1, 2, 'Testy', 0.6, [2, 4]) }, { id: 'koszyk-mobile', col: 'review', uat: true }],
+    push: [...MAIN_BASE, { id: 'newsletter', col: 'inprogress', run: run(2, 2, 'Pisanie kodu', 1.4, [2, 4]) }, { id: 'koszyk-mobile', col: 'review', uat: true }],
+    attn: [...MAIN_BASE, { id: 'newsletter', col: 'inprogress', run: run(2, 2, 'Recenzja', 1.9, [2, 4]) }],
+    none: [...MAIN_BASE, { id: 'newsletter', col: 'inprogress', run: run(1, 2, 'Testy', 0.6, [2, 4]) }, { id: 'koszyk-mobile', col: 'review', uat: true }],
+  };
+  const PATH = (n) => `D:/kod/sklep-demo-wt/${n}`;
+  const WPS = {
+    par: [
+      { name: 'platnosci', cls: 'wp1', branch: 'platnosci', path: PATH('platnosci'), base: ['21.10', '4e1a9c2'], ahead: 1, behind: 0, pushed: false, dirty: 0,
+        sprints: [{ id: 'blik', st: 'done', commit: '7f3c2e1', date: '23.10' }, { id: 'zwroty', st: 'run', run: run(2, 4, 'Recenzja', 2.1, [6, 9]) }, { id: 'raty', st: 'queue' }] },
+      { name: 'magazyn', cls: 'wp2', branch: 'magazyn', path: PATH('magazyn'), base: ['24.10', '8d27f05'], ahead: 0, behind: 3, pushed: false, dirty: 0,
+        sprints: [{ id: 'stany-magazynu', st: 'run', run: run(1, 3, 'Pisanie kodu', 0.8, [4, 6]) }] },
+    ],
+    push: [
+      { name: 'platnosci', cls: 'wp1', branch: 'platnosci', path: PATH('platnosci'), base: ['21.10', '4e1a9c2'], ahead: 3, behind: 2, pushed: false, dirty: 0,
+        sprints: [{ id: 'blik', st: 'done', commit: '7f3c2e1', date: '23.10' }, { id: 'zwroty', st: 'done', commit: '9a04b6d', date: '25.10' }, { id: 'raty', st: 'done', commit: 'c51e8f0', date: '26.10' }] },
+      { name: 'magazyn', cls: 'wp2', branch: 'magazyn', path: PATH('magazyn'), base: ['24.10', '8d27f05'], ahead: 0, behind: 5, pushed: false, dirty: 0,
+        sprints: [{ id: 'stany-magazynu', st: 'run', run: run(3, 3, 'Recenzja', 3.9, [4, 6]) }] },
+    ],
+    attn: [
+      { name: 'platnosci', cls: 'wp1', branch: 'platnosci', path: PATH('platnosci'), base: ['21.10', '4e1a9c2'], ahead: 3, behind: 4, pushed: 'ok', dirty: 0,
+        sprints: [{ id: 'blik', st: 'done', commit: '7f3c2e1', date: '23.10' }, { id: 'zwroty', st: 'done', commit: '9a04b6d', date: '25.10' }, { id: 'raty', st: 'done', commit: 'c51e8f0', date: '26.10' }] },
+      { name: 'magazyn', cls: 'wp2', branch: 'magazyn', path: PATH('magazyn'), base: ['14.10', '2b6e913'], ahead: 1, behind: 27, pushed: false, dirty: 4,
+        dirtyFiles: ['src/pages/Product.tsx', 'src/api/stock.ts', 'src/api/stock.test.ts', 'notatki.txt'],
+        sprints: [{ id: 'stany-magazynu', st: 'uat', commit: 'e03d7a4', date: '25.10' }, { id: 'rezerwacje', st: 'held' }] },
+    ],
+    none: [],
+  };
+  const COLS = ['draft', 'todo', 'inprogress', 'review'];
+  const COL_L = { draft: 'Draft', todo: 'Do zrobienia', inprogress: 'W toku', review: 'Czeka na przegląd' };
+  const COL_H = { draft: 'jest pomysł, ale jeszcze nie wiadomo, o co dokładnie chodzi', todo: 'wiadomo, o co chodzi; PO bierze od góry', inprogress: 'zlecone albo przebieg trwa', review: 'scalone; UAT albo przegląd kodu, potem przyjęcie' };
+  const ST2COL = { done: 'review', uat: 'review', run: 'inprogress', queue: 'inprogress', held: 'inprogress' };
+
+  // ---------- helpers ----------
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const plural = (n, one, few, many) => (n === 1 ? one : (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20)) ? few : many);
+  const nSpr = (n) => `${n} ${plural(n, 'sprint', 'sprinty', 'sprintów')}`;
+  const nCom = (n) => `${n} ${plural(n, 'commit', 'commity', 'commitów')}`;
+  const nFile = (n) => `${n} ${plural(n, 'plik', 'pliki', 'plików')}`;
+  const fmtM = (x) => x.toFixed(1).replace('.', ',');
+  const pill = (st, label) => `<span class="pill ${st}">${esc(label || COL_L[st])}</span>`;
+  const KL = { feature: 'F', bugfix: 'B' };
+  const kind = (k) => `<span class="kind ${k}" title="${k === 'bugfix' ? 'poprawka' : 'funkcja'}">${KL[k]}</span>`;
+  const BR = '<svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M5 3.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0zm0 2.12a2.25 2.25 0 1 0-1.5 0v5.26a2.25 2.25 0 1 0 1.5 0V9.5c.5.3 1.1.5 1.75.5h2a2.5 2.5 0 0 0 2.4-1.86 2.25 2.25 0 1 0-1.53-.2A1 1 0 0 1 8.75 8.5h-2A1.75 1.75 0 0 1 5 6.75zM4.25 12a.75.75 0 1 1 0 1.5.75.75 0 0 1 0-1.5zm7.5-6a.75.75 0 1 1 0 1.5.75.75 0 0 1 0-1.5z"/></svg>';
+  const k10 = (label, block) => `<span class="k10 ${block ? 'block' : ''}" title="Akcja z kroku K10 (strona z serwerem); tu tylko zarezerwowane miejsce"><span class="k10-tag">później (K10)</span><span>${esc(label)}</span></span>`;
+  let ago = 3;
+  const live = () => `<span class="live work"><i></i><span class="ago">na żywo · ${ago} s temu</span></span>`;
+  const segs = (r) => `<div class="segs" aria-label="zadania: ${r.task - 1} z ${r.of} gotowe">${Array.from({ length: r.of }, (_, i) => `<span class="${i < r.task - 1 ? 'done' : i === r.task - 1 ? 'run' : ''}"></span>`).join('')}</div>`;
+  const lvBlock = (r) => `<div class="lv">${segs(r)}<div class="now"><span>Zadanie ${r.task} z ${r.of} · ${esc(r.phase)}</span><span class="num">${fmtM(r.spent)} / ${r.price[0]}–${r.price[1]} mln</span></div><div style="margin-top:4px">${live()}</div></div>`;
+  const wps = () => WPS[P.s];
+  const wpOf = (id) => { for (const w of wps()) { const i = w.sprints.findIndex((x) => x.id === id); if (i >= 0) return { w, i, sp: w.sprints[i] }; } return null; };
+  const wpBadge = (w, pos) => `<span class="wpb ${w.cls}" title="miejsce pracy ${esc(w.name)}">${BR}${esc(w.name)}${pos ? ` · ${pos}` : ''}</span>`;
+  const copyCmd = (w) => `<div class="cmd"><code>git push -u origin ${esc(w.branch)}</code><button type="button" class="copy-btn" data-copy="git push -u origin ${esc(w.branch)}">Kopiuj</button></div>`;
+
+  function wpState(w) {
+    const sts = w.sprints.map((x) => x.st);
+    if (w.pushed) return ['closed', 'Wypchnięte · review zespołu'];
+    if (sts.includes('uat') || w.dirty) return ['review', 'Czeka na Ciebie'];
+    if (sts.includes('run')) return ['inprogress', 'Pracuje'];
+    if (sts.every((x) => x === 'done')) return ['ready', 'Gotowe do wypchnięcia'];
+    return ['todo', 'Czeka na start'];
+  }
+  const readyToPush = (w) => !w.pushed && w.sprints.every((x) => x.st === 'done');
+  const aheadHtml = (w) => `<span class="ab" title="commity na ${esc(w.branch)}, których nie ma w develop / commity develop, których nie ma na ${esc(w.branch)}">↑${w.ahead} przed · <span class="${w.behind >= 20 ? 'bad' : ''}">↓${w.behind} za</span> develop</span>`;
+  const pushedHtml = (w) => (w.pushed === 'ok' ? `<span class="ok-t">✓ tak, origin/${esc(w.branch)} aktualne</span>` : '<span class="muted">nie</span>');
+  const dirtyHtml = (w) => (w.dirty ? `<span class="warn">${nFile(w.dirty)}</span>` : '<span class="muted">brak</span>');
+  const baseHtml = (w) => `develop · ${esc(w.base[0])} <span class="id">${esc(w.base[1])}</span>`;
+
+  function attnItems(w) {
+    const a = [];
+    w.sprints.filter((x) => x.st === 'uat').forEach((x) => a.push(`<b>Sprint ${esc(x.id)} czeka na Twój UAT.</b> <span class="muted">Co sprawdzić, jest w karcie sprintu. Jego commit już jest na gałęzi ${esc(w.branch)}; po przyjęciu nic się nie scala do develop.</span>`));
+    if (w.dirty) {
+      const held = w.sprints.find((x) => x.st === 'held');
+      a.push(`<b>${nFile(w.dirty)} niezapisanych w miejscu pracy, spoza sprintów.</b> <span class="muted">${held ? `Następny sprint (${esc(held.id)}) nie ruszy, dopóki ich nie zapiszesz albo nie odrzucisz. ` : ''}Pliki: ${w.dirtyFiles.map((f) => `<code>${esc(f)}</code>`).join(', ')}.</span>`);
+    }
+    if (w.behind >= 20) a.push(`<b>${nCom(w.behind)} za develop.</b> <span class="muted">Gałąź wyszła ${esc(w.base[0])}. Przed wypchnięciem warto wciągnąć develop, inaczej zespół dostanie konflikty przy review.</span>`);
+    return a;
+  }
+  const attnList = (w) => { const a = attnItems(w); return a.length ? `<ul class="attn">${a.map((x) => `<li>${x}</li>`).join('')}</ul>` : ''; };
+  function pushBox(w, inline) {
+    if (!readyToPush(w)) return '';
+    const n = w.sprints.length;
+    const after = `Po wypchnięciu zespół robi review gałęzi. Miejsce pracy sprzątam dopiero na Twoją prośbę, po scaleniu przez zespół.${w.behind ? ` Gałąź jest ${nCom(w.behind)} za develop; zespół może poprosić o wciągnięcie develop.` : ''}`;
+    return `<div class="push-box"><div class="ttl"><span>✓ Gotowe do wypchnięcia: gałąź <code>${esc(w.branch)}</code>, ${nSpr(n)}</span><span class="muted">(${nCom(w.ahead)}, nic nie trafiło do develop)</span></div>
+      <div class="push-row">${copyCmd(w)}${k10('Wypchnij')}</div>${inline ? '' : `<div class="after">${esc(after)}</div>`}</div>`;
+  }
+  const seqHtml = (w) => `<span class="seq">${w.sprints.map((x, i) => `${i ? '<span class="ar">→</span>' : ''}<span class="s ${x.st}" data-open="${esc(x.id)}" title="${esc(S[x.id].title)}">${x.st === 'done' ? '✓ ' : x.st === 'run' ? '● ' : x.st === 'uat' ? '! ' : x.st === 'held' ? '‖ ' : ''}${esc(x.id)}</span>`).join('')}</span>`;
+
+  // ---------- board items (main tree + workplace sprints mapped to human states) ----------
+  function items() {
+    const out = MAIN[P.s].map((x) => ({ ...x }));
+    wps().forEach((w) => w.sprints.forEach((x, i) => out.push({ id: x.id, col: ST2COL[x.st], st: x.st, run: x.run, uat: x.st === 'uat', w, pos: i + 1, total: w.sprints.length })));
+    return out;
+  }
+  function card(it, opts = {}) {
+    const s = S[it.id];
+    const cls = ['bcard', it.col === 'draft' ? 'draft' : '', it.next ? 'next' : '', it.col === 'inprogress' ? 'running' : '', it.st === 'done' ? 'compact' : ''].join(' ');
+    let right = '';
+    if (it.next) right += '<span class="badge next">następny</span>';
+    if (it.run) right += '<span class="badge run">przebieg trwa</span>';
+    else if (it.st === 'queue') right += '<span class="badge queue">czeka na start</span>';
+    else if (it.st === 'held') right += '<span class="badge held">wstrzymany</span>';
+    const foot = [];
+    if (opts.badge && it.w) foot.push(wpBadge(it.w, `${it.pos} z ${it.total}`));
+    if (it.go) foot.push('<span class="badge go">✓ może iść bez Ciebie</span>');
+    if (opts.badge && !it.w && it.col === 'todo') foot.push(k10('+ miejsce pracy'));
+    if (it.need) foot.push(`<span class="badge need">${esc(it.need)}</span>`);
+    if (it.uat) foot.push('<span class="badge uat">UAT: czeka na Ciebie</span>');
+    if (it.st === 'done') foot.push(`<span class="badge done">✓ ${it.w.pushed ? 'wypchnięty, review zespołu' : 'zrobiony, czeka na wypchnięcie'}</span>`);
+    if (it.st === 'queue' && it.w && !opts.badge) foot.push(`<span class="subtle">ruszy po ${esc(it.w.sprints[it.pos - 2].id)}</span>`);
+    if (it.st === 'held') foot.push('<span class="subtle">niezapisane zmiany w miejscu pracy</span>');
+    return `<div class="${cls}" data-open="${esc(it.id)}" role="button" tabindex="0"><div class="top">${opts.ord != null ? `<span class="ord">${opts.ord}.</span>` : ''}<span class="id">${esc(it.id)}</span>${kind(s.kind)}<span class="right">${right}</span></div>
+      <div class="title">${esc(s.title)}</div><div class="foot">${foot.join('')}</div>${it.run ? lvBlock(it.run) : ''}</div>`;
+  }
+  function statsStrip(list) {
+    const n = (c) => list.filter((x) => x.col === c).length;
+    return `<div class="stats"><div class="grp">${['todo', 'inprogress', 'review', 'draft'].map((c) => `<span>${pill(c)}<b>${n(c)}</b></span>`).join('')}</div><div class="sep"></div>
+      <div class="grp"><span><span class="muted">Backlog</span><b>23</b></span><span>${kind('bugfix')} błędy <b>4</b></span><span>poważne <b>1</b></span></div></div>`;
+  }
+  function plainBoard(list, opts = {}) {
+    const col = (c) => {
+      const body = list.filter((x) => x.col === c).map((x, i) => card(x, { ...opts, ord: c === 'todo' ? i + 1 : null })).join('');
+      return `<section class="col c-${c}"><div class="col-head">${pill(c)}<span class="n">${list.filter((x) => x.col === c).length}</span></div><div class="col-hint">${COL_H[c]}</div><div class="col-body">${body || '<div class="col-empty">pusto</div>'}</div></section>`;
+    };
+    return `<div class="board">${COLS.map(col).join('')}</div>`;
+  }
+
+  // ---------- header ----------
+  function header() {
+    const W = wps();
+    const tabs = [['roadmap', 'Roadmapa', 6 + W.reduce((a, w) => a + w.sprints.length, 0) - (P.s === 'attn' ? 1 : 0)], ['backlog', 'Backlog', 23], ['decisions', 'Ustalenia', 9], ['history', 'Historia', 14]];
+    let flag = '';
+    if (P.v === 'A' && W.length) {
+      const ready = W.filter(readyToPush).length, need = W.filter((w) => attnItems(w).length).length;
+      flag = need ? '<span class="tab-flag attn">czeka na Ciebie</span>' : ready ? `<span class="tab-flag ready">${ready} do wypchnięcia</span>` : '';
+      tabs.splice(1, 0, ['wp', 'Miejsca pracy', W.length]);
+    }
+    const tabsHtml = tabs.map(([k, l, n]) => `<button type="button" class="app-tab ${k === activeTab() ? 'active' : ''} ${k === 'wp' && flag ? 'has-flag' : ''}" data-tab="${k}">${esc(l)}<span class="count">${n}</span>${k === 'wp' ? flag : ''}</button>`).join('');
+    let bar = '';
+    if (P.v === 'C' && W.length && activeTab() === 'roadmap') {
+      const all = items();
+      const cnt = (w) => all.filter((x) => (w ? x.w === w : !x.w)).length;
+      bar = `<div class="wpc-bar"><span class="lbl">Miejsce pracy:</span><button type="button" class="wsel ${P.w === 'all' ? 'on' : ''}" data-w="all">Wszystkie <span class="n">${all.length}</span></button>
+        <button type="button" class="wsel wp0 ${P.w === 'main' ? 'on' : ''}" data-w="main"><span class="wp-dot"></span>Główne drzewo <span class="n">${cnt(null)}</span></button>
+        ${W.map((w) => `<button type="button" class="wsel ${w.cls} ${P.w === w.name ? 'on' : ''}" data-w="${esc(w.name)}"><span class="wp-dot"></span>${esc(w.name)} <span class="n">${cnt(w)}</span>${readyToPush(w) ? ' <span class="ok-t">✓</span>' : attnItems(w).length ? ' <span class="warn">!</span>' : ''}</button>`).join('')}
+        ${k10('+ Nowe miejsce pracy')}</div>`;
+    }
+    return `<div class="app-top"><div class="app-logo" aria-hidden="true">dw</div><div class="app-title">sklep-demo<small>roadmapa produktu</small></div>
+      <div class="app-meta"><span>Wygenerowano: 26.10.2026 15:16</span><span class="gen-long">plik lokalny, tylko do odczytu</span><span class="seg" role="group"><button type="button" class="on">PL</button><button type="button">EN</button></span></div></div>
+      <nav class="app-tabs">${tabsHtml}</nav>${bar}`;
+  }
+  function activeTab() {
+    if (P.v === 'A' && wps().length) return P.tab || 'wp';
+    return P.tab === 'wp' || !P.tab ? 'roadmap' : P.tab;
+  }
+
+  // ---------- variant A: own tab, one card per workplace ----------
+  function laneTile(w, x, i) {
+    const s = S[x.id];
+    const badge = { done: '<span class="badge done">zrobiony</span>', run: '<span class="badge run">przebieg trwa</span>', queue: '<span class="badge queue">w kolejce</span>', uat: '<span class="badge uat">UAT</span>', held: '<span class="badge held">wstrzymany</span>' }[x.st];
+    let meta = '';
+    if (x.st === 'done') meta = `<div class="meta">✓ commit <span class="id">${esc(x.commit)}</span> na ${esc(w.branch)} · ${esc(x.date)}</div>`;
+    if (x.st === 'run') meta = lvBlock(x.run);
+    if (x.st === 'queue') meta = `<div class="meta">ruszy po ${esc(w.sprints[i - 1].id)}, na jego wyniku</div>`;
+    if (x.st === 'uat') meta = `<div class="meta"><span class="warn">czeka na Twój UAT</span> · commit <span class="id">${esc(x.commit)}</span> · ${esc(x.date)}</div>`;
+    if (x.st === 'held') meta = '<div class="meta"><span class="warn">nie ruszy:</span> niezapisane zmiany w miejscu pracy</div>';
+    return `<div class="lt ${x.st}" data-open="${esc(x.id)}" role="button" tabindex="0"><div class="top"><span class="ordn">${i + 1}</span><span class="id">${esc(x.id)}</span>${kind(s.kind)}<span class="right">${badge}</span></div><div class="title">${esc(s.title)}</div>${meta}</div>`;
+  }
+  function wpCardA(w) {
+    const [stc, stl] = wpState(w);
+    const facts = [['Gałąź', `<code>${esc(w.branch)}</code>`], ['Ścieżka', `<span class="path">${esc(w.path)}</span>`], ['Wyszło z', baseHtml(w)], ['Względem develop', aheadHtml(w)], ['Wypchnięte', pushedHtml(w)], ['Niezapisane zmiany', dirtyHtml(w)]];
+    const acts = w.pushed ? k10('Usuń po scaleniu') : readyToPush(w) ? '' : k10('Wstrzymaj · Wznów');
+    return `<section class="wp-card ${w.cls}"><div class="wp-head"><span class="wp-dot"></span><span class="wp-name">${esc(w.name)}</span>${pill(stc, stl)}<span class="subtle">${nSpr(w.sprints.length)}</span><span class="acts">${acts}</span></div>
+      <div class="wp-facts">${facts.map(([k, v]) => `<div class="fact"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('')}</div>
+      ${attnList(w)}
+      <div class="lane-h">Sprinty po kolei <span class="subtle">każdy na wyniku poprzedniego, jeden commit na sprint</span>${k10('kolejność: przeciąganie')}</div>
+      <div class="lane">${w.sprints.map((x, i) => laneTile(w, x, i)).join('')}${w.pushed ? '' : k10('+ Przypisz sprint', true)}</div>
+      ${pushBox(w)}</section>`;
+  }
+  function mainCardA() {
+    const m = MAIN[P.s], inp = m.filter((x) => x.col === 'inprogress').length, rv = m.filter((x) => x.col === 'review').length;
+    return `<section class="wp-card wp-main wp0"><div class="wp-head"><span class="wp-dot"></span><span class="wp-name">Główne drzewo</span><code>develop</code><span class="muted">sprinty bez miejsca pracy; po przyjęciu scalane do develop jak dziś</span>
+      <span class="acts"><span class="muted" style="font-size:var(--text-sm)">${inp} w toku · ${rv} czeka na przegląd</span><button type="button" class="link-btn" data-tab="roadmap">Zobacz na Roadmapie →</button></span></div></section>`;
+  }
+  function pageA() {
+    const W = wps();
+    const run = W.reduce((a, w) => a + w.sprints.filter((x) => x.st === 'run').length, 0);
+    const ready = W.filter(readyToPush).length, need = W.filter((w) => attnItems(w).length).length;
+    const sum = `<div class="wp-sum"><span><b>${W.length}</b> miejsca pracy</span><span class="sep"></span><span><b>${run}</b> w toku</span><span class="sep"></span><span><b class="${ready ? 'ok-t' : ''}">${ready}</b> gotowe do wypchnięcia</span><span class="sep"></span><span><b class="${need ? 'warn' : ''}">${need}</b> czeka na Ciebie</span>${k10('+ Nowe miejsce pracy')}</div>`;
+    return `<div class="page">${sum}${W.map(wpCardA).join('')}${mainCardA()}</div>`;
+  }
+
+  // ---------- variant B: swimlanes on the state board ----------
+  function laneHeadB(w) {
+    if (!w) return `<div class="sl-head wp0"><div class="sl-row1"><span class="nm"><span class="wp-dot"></span>Główne drzewo</span><code>develop</code><span class="muted">sprinty bez miejsca pracy; po przyjęciu scalane do develop jak dziś</span></div></div>`;
+    const [stc, stl] = wpState(w);
+    const acts = w.pushed ? k10('Usuń po scaleniu') : readyToPush(w) ? '' : k10('Wstrzymaj · Wznów');
+    return `<div class="sl-head ${w.cls}"><div class="sl-row1"><span class="nm"><span class="wp-dot"></span>${esc(w.name)}</span>${pill(stc, stl)}<span class="sp"></span>
+      <span>gałąź <code>${esc(w.branch)}</code></span><span>z ${baseHtml(w)}</span><span class="sp"></span>${aheadHtml(w)}<span class="sp"></span><span>wypchnięte: ${pushedHtml(w)}</span><span class="sp"></span><span>niezapisane: ${dirtyHtml(w)}</span><span class="acts">${acts}</span></div>
+      <div class="sl-row2"><span>Po kolei:</span>${seqHtml(w)}${w.pushed ? '' : k10('kolejność: przeciąganie')}<span class="path" title="ścieżka">${esc(w.path)}</span></div>${attnList(w)}${readyToPush(w) ? `<div style="margin-top:8px">${pushBox(w, true)}</div>` : ''}</div>`;
+  }
+  function laneB(w, list) {
+    const mine = list.filter((x) => (w ? x.w === w : !x.w));
+    const cell = (c) => {
+      const cs = mine.filter((x) => x.col === c);
+      let body = cs.map((x, i) => card(x, { ord: c === 'todo' ? i + 1 : null })).join('');
+      if (w && c === 'todo' && !w.pushed) body = k10('Przeciągnij tu sprint z Głównego drzewa, aby przypisać', true);
+      return `<div class="sl-cell ${body ? '' : 'empty'}"><span class="cl">${pill(c)}</span>${body || '<div class="col-empty">—</div>'}</div>`;
+    };
+    return `<section class="sl">${laneHeadB(w)}<div class="sl-grid">${COLS.map(cell).join('')}</div></section>`;
+  }
+  function pageB() {
+    const list = items();
+    if (!wps().length) return `<div class="page">${statsStrip(list)}${plainBoard(list)}</div>`;
+    const heads = `<div class="sl-cols">${COLS.map((c) => `<div>${pill(c)}<span class="n">${list.filter((x) => x.col === c).length}</span><span class="col-hint">${COL_H[c]}</span></div>`).join('')}</div>`;
+    return `<div class="page">${statsStrip(list)}${heads}${laneB(null, list)}${wps().map((w) => laneB(w, list)).join('')}</div>`;
+  }
+
+  // ---------- variant C: workplace as a property of sprints ----------
+  function pageC() {
+    const list = items(), W = wps();
+    if (!W.length) return `<div class="page">${statsStrip(list)}${plainBoard(list)}</div>`;
+    let top = '', shown = list;
+    if (P.w === 'all') {
+      top = `<div class="wpc-list">${W.map((w) => {
+        const [stc, stl] = wpState(w);
+        return `<div class="wpc-row ${w.cls}"><span class="nm" data-w="${esc(w.name)}"><span class="wp-dot"></span>${esc(w.name)}</span>${pill(stc, stl)}${seqHtml(w)}<span class="sp"></span>${aheadHtml(w)}<span class="sp"></span><span>wypchnięte: ${pushedHtml(w)}</span><span class="sp"></span><span>niezapisane: ${dirtyHtml(w)}</span>
+          <span class="end">${readyToPush(w) ? copyCmd(w) + k10('Wypchnij') : ''}</span>${attnList(w)}</div>`;
+      }).join('')}</div>`;
+    } else if (P.w === 'main') {
+      shown = list.filter((x) => !x.w);
+      top = '<div class="wpc-sel wp0"><div class="sl-row1"><span class="nm"><span class="wp-dot"></span>Główne drzewo</span><code>develop</code><span class="muted">sprinty bez miejsca pracy; po przyjęciu scalane do develop jak dziś</span></div></div>';
+    } else {
+      const w = W.find((x) => x.name === P.w) || W[0];
+      shown = list.filter((x) => x.w === w);
+      const [stc, stl] = wpState(w);
+      top = `<div class="wpc-sel ${w.cls}"><div class="sl-row1"><span class="nm"><span class="wp-dot"></span>${esc(w.name)}</span>${pill(stc, stl)}<span class="sp"></span><span>gałąź <code>${esc(w.branch)}</code></span><span>z ${baseHtml(w)}</span><span class="sp"></span>${aheadHtml(w)}<span class="sp"></span><span>wypchnięte: ${pushedHtml(w)}</span><span class="sp"></span><span>niezapisane: ${dirtyHtml(w)}</span>
+        <span class="acts" style="margin-left:auto">${w.pushed ? k10('Usuń po scaleniu') : readyToPush(w) ? '' : k10('Wstrzymaj · Wznów')}</span></div>
+        <div class="sl-row2"><span>Po kolei:</span>${seqHtml(w)}<span class="path">${esc(w.path)}</span></div>${attnList(w)}${pushBox(w)}</div>`;
+    }
+    return `<div class="page">${top}${statsStrip(shown)}${plainBoard(shown, { badge: true })}</div>`;
+  }
+
+  // ---------- sprint card (as today) with a workplace box ----------
+  function modal(id) {
+    const s = S[id], it = items().find((x) => x.id === id);
+    if (!s || !it) return '';
+    const wo = wpOf(id);
+    const head = `<div class="hp-head"><div class="row">${pill(it.col)}<span class="id">${esc(id)}</span>${kind(s.kind)}${wo ? wpBadge(wo.w) : ''}${it.run ? live() : ''}</div><div class="hp-title">${esc(s.title)}</div></div>`;
+    let main = s.why ? `<p class="hp-why">${esc(s.why)}</p>` : '<div class="hp-missing">PO jeszcze nie opisał tego sprintu dla ludzi.</div>';
+    if (it.run) main += `<div class="hp-sec"><h3>Postęp</h3>${lvBlock(it.run)}<div class="note-line" style="margin-top:8px">Pełny podgląd na żywo jak w szkicu 005 (kroki, co się dzieje, koszt).</div></div>`;
+    if (it.uat) main += '<div class="hp-sec"><h3>Jak sprawdzić</h3><ul class="hp-list steps"><li>Otwórz kartę produktu z małym stanem i sprawdź ostrzeżenie.</li><li>Zmień stan w panelu i odśwież kartę.</li></ul></div>';
+    let wbox;
+    if (wo) {
+      const { w, i, sp } = wo;
+      const prev = i ? ` (po ${esc(w.sprints[i - 1].id)})` : ' (pierwszy)';
+      wbox = `<div class="hp-box"><h4>Miejsce pracy</h4><div class="line"><span>Nazwa</span>${wpBadge(w)}</div><div class="line"><span>Gałąź</span><code>${esc(w.branch)}</code></div>
+        <div class="line"><span>Kolejność</span><span>${i + 1} z ${w.sprints.length}${prev}</span></div>${sp.commit ? `<div class="line"><span>Commit</span><span class="id">${esc(sp.commit)}</span></div>` : ''}
+        <div class="wnote">Wynik: jeden commit na gałęzi ${esc(w.branch)}. Nic nie trafia do develop; gałąź wypychasz sam.</div>${k10('Przenieś do innego miejsca · zmień kolejność', true)}</div>`;
+    } else {
+      wbox = `<div class="hp-box"><h4>Miejsce pracy</h4><div class="line"><span>Główne drzewo</span><code>develop</code></div><div class="wnote">Po przyjęciu scalany do develop, jak dziś.</div>${k10('Przypisz do miejsca pracy', true)}</div>`;
+    }
+    const you = it.uat ? '<div class="hp-box you"><h4>Od Ciebie</h4><div>UAT: sprawdź kroki obok i powiedz PO „przyjmuję” albo co poprawić.</div></div>' : '<div class="hp-box you ok"><h4>Od Ciebie</h4><div>Nic teraz.</div></div>';
+    return `<div class="modal-wrap" id="modal-wrap" style="pointer-events:auto"><div class="modal open" role="dialog" aria-modal="true"><div class="m-head"><div>${head}</div><button type="button" class="m-close" data-close="1" aria-label="Zamknij">×</button></div>
+      <div class="m-body"><div style="min-width:0">${main}</div><div class="hp-side">${you}${wbox}</div></div></div></div>`;
+  }
+
+  // ---------- render ----------
+  function render() {
+    document.querySelectorAll('.sk-bar [data-v]').forEach((b) => b.classList.toggle('on', b.dataset.v === P.v));
+    document.querySelectorAll('.sk-bar [data-s]').forEach((b) => b.classList.toggle('on', b.dataset.s === P.s));
+    document.querySelectorAll('.sk-bar [data-k10]').forEach((b) => b.classList.toggle('on', (b.dataset.k10 === '1') === P.k10));
+    document.body.classList.toggle('no-k10', !P.k10);
+    if (P.w !== 'all' && P.w !== 'main' && !wps().some((w) => w.name === P.w)) P.w = 'all';
+    document.getElementById('app-header').innerHTML = header();
+    const tab = activeTab();
+    let html;
+    if (tab === 'wp') html = pageA();
+    else if (tab !== 'roadmap') html = `<div class="page"><div class="note-line">Zakładka „${esc(tab)}” bez zmian względem dzisiejszej strony (poza szkicem).</div></div>`;
+    else if (P.v === 'B') html = pageB();
+    else if (P.v === 'C') html = pageC();
+    else { const list = items(); html = `<div class="page">${statsStrip(list)}${plainBoard(list)}</div>`; }
+    document.getElementById('page').innerHTML = html;
+    const mw = document.getElementById('modal-wrap'); if (mw) mw.remove();
+    const ov = document.getElementById('overlay');
+    const m = P.open ? modal(P.open) : '';
+    ov.classList.toggle('open', !!m); document.body.classList.toggle('modal-open', !!m);
+    if (m) document.body.insertAdjacentHTML('beforeend', m);
+  }
+
+  document.addEventListener('click', (e) => {
+    const t = e.target.closest('button, [data-open], [data-close], [data-w]');
+    if (!t) { if (e.target.id === 'modal-wrap') { P.open = null; render(); } return; }
+    if (t.dataset.v) { P.v = t.dataset.v; P.tab = null; P.w = 'all'; P.open = null; render(); }
+    else if (t.dataset.s) { P.s = t.dataset.s; P.open = null; render(); }
+    else if (t.dataset.k10) { P.k10 = t.dataset.k10 === '1'; render(); }
+    else if (t.dataset.copy) { (navigator.clipboard ? navigator.clipboard.writeText(t.dataset.copy) : Promise.reject()).then(() => { t.textContent = 'Skopiowane'; setTimeout(() => { t.textContent = 'Kopiuj'; }, 1500); }, () => {}); }
+    else if (t.dataset.close) { P.open = null; render(); }
+    else if (t.dataset.tab) { P.tab = t.dataset.tab; P.open = null; render(); }
+    else if (t.dataset.w) { P.w = t.dataset.w; render(); }
+    else if (t.dataset.open) { P.open = t.dataset.open; render(); }
+  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && P.open) { P.open = null; render(); } });
+  render();
+  if (!FREEZE) setInterval(() => { ago = ago >= 5 ? 0 : ago + 1; document.querySelectorAll('.ago').forEach((el) => { el.textContent = `na żywo · ${ago} s temu`; }); }, 1000);
+})();
+</script>
+</body>
+</html>

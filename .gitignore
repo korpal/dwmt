@@ -1,3 +1,5 @@
 node_modules/
 .dwmt/
 __pycache__/
+.playwright-mcp/
+.idea/

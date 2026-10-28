@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sketch 001 — pierwszy ekran roadmapy</title>
+<link rel="stylesheet" href="../themes/default.css">
+<link rel="stylesheet" href="../shared/app.css">
+<link rel="stylesheet" href="../shared/board.css">
+<style>
+/* ---------- shared bits of this sketch ---------- */
+.stats { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); align-items: center; padding: var(--space-2) var(--space-3);
+  background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); font-size: var(--text-sm); }
+.stats .grp { display: flex; gap: var(--space-3); align-items: center; }
+.stats .sep { width: 1px; height: 18px; background: var(--color-border); }
+.stats b { font-variant-numeric: tabular-nums; }
+
+/* ---------- A: tiles + queue table ---------- */
+.tiles { display: grid; grid-template-columns: 1.3fr 1.2fr 1fr 1fr; gap: var(--space-3); }
+@media (max-width: 1100px) { .tiles { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 640px) { .tiles { grid-template-columns: 1fr; } }
+.tile { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-3) var(--space-4); box-shadow: var(--shadow-sm); min-width: 0; }
+.tile-label { font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--color-text-muted); margin-bottom: var(--space-2); display: flex; gap: 6px; align-items: center; }
+.tile.now { border-left: 4px solid var(--color-primary); cursor: pointer; transition: all .15s ease; }
+.tile.now:hover { box-shadow: var(--shadow-md); }
+.tile.now .tile-label { color: var(--color-primary); }
+.tile-goal { font-size: var(--text-lg); font-weight: 600; line-height: 1.35; margin: 6px 0 var(--space-2); }
+.tile-foot { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: var(--text-sm); color: var(--color-text-muted); }
+.tile .row { display: flex; gap: 6px; align-items: center; }
+.mini-list { display: flex; flex-direction: column; }
+.mini-row { display: grid; grid-template-columns: 22px 1fr auto; gap: 6px; align-items: center; padding: 5px 4px; border-radius: var(--radius-sm); cursor: pointer; transition: background .15s ease; }
+.mini-row:hover { background: var(--color-hover); }
+.mini-row .pos { color: var(--color-text-subtle); font-size: var(--text-sm); text-align: right; }
+.mini-row .g { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.big { font-size: var(--text-3xl); font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.tile.uat .big { color: var(--st-done); }
+.tile .sub { font-size: var(--text-sm); color: var(--color-text-muted); margin: 4px 0 var(--space-2); }
+.link-btn { border: 0; background: none; color: var(--color-primary); cursor: pointer; padding: 0; font-size: var(--text-sm); }
+.link-btn:hover { text-decoration: underline; }
+.kv { display: grid; grid-template-columns: 1fr auto; gap: 2px var(--space-3); font-size: var(--text-sm); }
+.kv span:nth-child(even) { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+.bars { display: flex; align-items: flex-end; gap: 4px; height: 44px; margin-top: var(--space-2); }
+.bars div { flex: 1; background: color-mix(in srgb, var(--color-primary) 55%, transparent); border-radius: 2px 2px 0 0; min-height: 2px; cursor: pointer; transition: background .15s; }
+.bars div:hover { background: var(--color-primary); }
+
+.table-wrap { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); overflow: auto; }
+.table-tools { display: flex; gap: var(--space-2); align-items: center; padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--color-border); }
+.table-tools .spacer { flex: 1; }
+.table-tools select, .table-tools input { border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 3px 8px; background: var(--color-surface); font-size: var(--text-sm); }
+.table-tools input { width: 180px; }
+table.grid { width: 100%; border-collapse: collapse; font-size: var(--text-base); }
+table.grid th { text-align: left; font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .04em; color: var(--color-text-muted); font-weight: 600;
+  padding: 6px 10px; border-bottom: 1px solid var(--color-border); background: var(--color-surface-2); position: sticky; top: 0; white-space: nowrap; }
+table.grid td { padding: 6px 10px; border-bottom: 1px solid var(--color-border); vertical-align: middle; }
+table.grid tbody tr[data-open] { cursor: pointer; transition: background .15s ease; }
+table.grid tbody tr[data-open]:hover { background: var(--color-hover); }
+table.grid tr.is-now td:first-child { box-shadow: inset 3px 0 0 var(--color-primary); }
+table.grid tr.is-now { background: color-mix(in srgb, var(--color-primary-bg) 60%, transparent); }
+table.grid tr.grp td { background: var(--color-surface-2); font-weight: 600; font-size: var(--text-sm); }
+td.pos { color: var(--color-text-subtle); text-align: right; width: 36px; font-variant-numeric: tabular-nums; }
+td.goal { max-width: 520px; }
+td.goal div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+td .chips { display: flex; gap: 4px; flex-wrap: wrap; }
+.uat-table { margin-top: var(--space-3); }
+
+/* ---------- B: board ---------- */
+.board { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(220px, 1fr); gap: var(--space-3); overflow-x: auto; padding-bottom: var(--space-2); margin-top: var(--space-3); }
+.col { background: var(--color-surface-2); border: 1px solid var(--color-border); border-radius: var(--radius-lg); display: flex; flex-direction: column; min-height: 200px; }
+.col-head { padding: var(--space-2) var(--space-3); display: flex; gap: 6px; align-items: center; border-bottom: 1px solid var(--color-border); }
+.col-head .n { margin-left: auto; font-size: var(--text-sm); color: var(--color-text-muted); font-variant-numeric: tabular-nums; }
+.col-hint { font-size: var(--text-xs); color: var(--color-text-subtle); padding: 4px var(--space-3) 0; }
+.col-body { padding: var(--space-2); display: flex; flex-direction: column; gap: var(--space-2); }
+.card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-2) var(--space-3); box-shadow: var(--shadow-sm); cursor: pointer; transition: all .15s ease; }
+.card:hover { box-shadow: var(--shadow-md); border-color: var(--color-border-strong); }
+.card.is-now { border: 2px solid var(--color-primary); }
+.card .top { display: flex; gap: 6px; align-items: center; white-space: nowrap; }
+.card .now-badge { white-space: nowrap; }
+.card .ord { font-size: var(--text-xs); font-weight: 700; color: var(--color-text-subtle); }
+.card .g { margin: 4px 0 6px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.card .foot { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; font-size: var(--text-sm); color: var(--color-text-muted); }
+.card.compact { padding: 6px var(--space-3); }
+.card.compact .g { -webkit-line-clamp: 1; margin: 2px 0 0; }
+
+/* ---------- C: dependency map ---------- */
+.uat-line { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; font-size: var(--text-sm); margin-top: var(--space-3);
+  padding: var(--space-2) var(--space-3); border: 1px solid color-mix(in srgb, var(--st-done) 40%, transparent); background: var(--st-done-bg); border-radius: var(--radius-md); }
+.uat-line b { color: var(--st-done); }
+.map { position: relative; display: grid; gap: 64px; margin-top: var(--space-3); padding: var(--space-3); background: var(--color-surface);
+  border: 1px solid var(--color-border); border-radius: var(--radius-lg); overflow-x: auto; }
+.map-col h4 { margin: 0 0 var(--space-2); font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .05em; color: var(--color-text-muted); }
+.map-col h4 small { text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--color-text-subtle); display: block; }
+.map-col .stack { display: flex; flex-direction: column; gap: var(--space-2); }
+.node { position: relative; z-index: 1; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 6px 10px;
+  box-shadow: var(--shadow-sm); cursor: pointer; transition: all .15s ease; min-width: 200px; }
+.node:hover { box-shadow: var(--shadow-md); }
+.node.closed { background: var(--st-closed-bg); border-color: color-mix(in srgb, var(--st-closed) 35%, transparent); min-width: 160px; }
+.node.is-now { border: 2px solid var(--color-primary); }
+.node .top { display: flex; gap: 6px; align-items: center; }
+.node .g { font-size: var(--text-sm); color: var(--color-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px; }
+svg.links { position: absolute; left: 0; top: 0; pointer-events: none; z-index: 0; overflow: visible; }
+svg.links path { fill: none; stroke: var(--color-border-strong); stroke-width: 1.5; transition: all .15s; }
+svg.links path.closed { stroke: color-mix(in srgb, var(--st-closed) 60%, transparent); }
+svg.links path.hi { stroke: var(--color-primary); stroke-width: 2.5; }
+svg.links path.dim { opacity: .2; }
+.legend { display: flex; gap: var(--space-4); font-size: var(--text-sm); color: var(--color-text-muted); margin-top: var(--space-2); }
+.legend i { display: inline-block; width: 18px; height: 2px; vertical-align: middle; margin-right: 4px; }
+</style>
+</head>
+<body>
+<script src="../data/data.js"></script>
+<script src="../data/pl.js"></script>
+<script src="../data/human.js"></script>
+<script src="../shared/app.js"></script>
+<script src="../shared/board.js"></script>
+<script>
+const { esc, t } = App;
+App.extendT({
+  now: 'TERAZ', nextUp: 'Dalej w kolejce', uatWaiting: 'Czeka na Twój UAT', last7: 'Ostatnie 7 dni', oldest: 'najstarszy', daysAgo: '{n} dni temu',
+  showAll: 'Pokaż wszystkie ({n})', showLess: 'Zwiń', merged7: 'scalonych sprintów', files7: 'zmienionych plików', tokens7: 'tokenów',
+  queue: 'Kolejka sprintów', queueHint: 'kolejność wierszy = kolejność pracy; najedź, by zobaczyć zależności', group: 'Grupuj:', g_none: 'brak', g_state: 'stan', g_kind: 'rodzaj',
+  filter: 'Filtruj…', c_goal: 'Cel', c_state: 'Stan', c_after: 'Czeka na', c_kind: 'Rodzaj', c_items: 'Pozycje', c_est: 'Szacunek', c_sprint: 'Sprint',
+  sprintsOpen: 'Sprinty w kolejce', backlogOpen: 'Backlog', bugs: 'błędy', major: 'poważne', later: 'na później',
+  ch_topic: 'sam temat, bez pliku', ch_notes: 'ustalenia w toku', ch_ready: 'gotowe do zlecenia', ch_ordered: 'zlecone, czekają na start', ch_running: 'przebieg trwa', ch_done: 'scalone, sprawdź i przyjmij',
+  more: '+{n} więcej', m_closed: 'Zamknięte', m_closedHint: 'na nie czekają otwarte', m_free: 'Można zaczynać', m_freeHint: 'nic otwartego nie blokuje', m_after: 'Po {n} sprincie', m_afterN: 'Po {n} sprintach', m_afterHint: 'czeka na sprint z lewej',
+  lg_closed: 'zależność od zamkniętego', lg_open: 'zależność od otwartego', uatLine: 'Czeka na Twój UAT:', mUat: 'w tym {n} scalony w kolejce',
+}, {
+  now: 'NOW', nextUp: 'Next in queue', uatWaiting: 'Awaiting your UAT', last7: 'Last 7 days', oldest: 'oldest', daysAgo: '{n} days ago',
+  showAll: 'Show all ({n})', showLess: 'Collapse', merged7: 'sprints merged', files7: 'files changed', tokens7: 'tokens',
+  queue: 'Sprint queue', queueHint: 'row order = work order; hover to see dependencies', group: 'Group:', g_none: 'none', g_state: 'state', g_kind: 'kind',
+  filter: 'Filter…', c_goal: 'Goal', c_state: 'State', c_after: 'Waits for', c_kind: 'Kind', c_items: 'Items', c_est: 'Estimate', c_sprint: 'Sprint',
+  sprintsOpen: 'Sprints in queue', backlogOpen: 'Backlog', bugs: 'bugs', major: 'major', later: 'later',
+  ch_topic: 'topic only, no file', ch_notes: 'being settled', ch_ready: 'ready to order', ch_ordered: 'ordered, waiting to start', ch_running: 'run in progress', ch_done: 'merged, check and accept',
+  more: '+{n} more', m_closed: 'Closed', m_closedHint: 'open sprints wait for these', m_free: 'Can start', m_freeHint: 'nothing open blocks them', m_after: 'After {n} sprint', m_afterN: 'After {n} sprints', m_afterHint: 'waits for a sprint on the left',
+  lg_closed: 'depends on closed', lg_open: 'depends on open', uatLine: 'Awaiting your UAT:', mUat: '{n} merged in queue',
+});
+
+const STATES = ['topic', 'notes', 'ready', 'ordered', 'running', 'done'];
+const open = App.open;
+const ui = { group: 'none', q: '', uatAll: false, boardMore: false };
+
+function counts() {
+  const by = Object.fromEntries(STATES.map((s) => [s, 0]));
+  open.forEach((r) => by[r.state]++);
+  const B = App.D.backlog;
+  return `<div class="stats">
+    <div class="grp"><span class="muted">${t('sprintsOpen')}</span><b>${open.length}</b>${STATES.filter((s) => by[s]).map((s) => `${App.pill(s)}<b>${by[s]}</b>`).join('')}</div>
+    <div class="sep"></div>
+    <div class="grp"><span class="muted">${t('backlogOpen')}</span><b>${B.length}</b>
+      <span>${App.kind('bug', true)} ${t('bugs')} <b>${B.filter((b) => b.type === 'bug').length}</b></span>
+      <span>${t('major')} <b>${B.filter((b) => b.sev === 'major' || b.sev === 'blocker').length}</b></span>
+      <span class="muted">${t('later')} <b>${B.filter((b) => b.triage === 'later').length}</b></span></div>
+  </div>`;
+}
+const itemsCount = (r) => { const s = App.sprintItems(r); return s.items.length + s.touch.length; };
+const goalHtml = (r) => esc(App.goal(r.id, r.goal)) + (App.translated(r.id) ? '' : App.enMark());
+
+/* ======================= A ======================= */
+function renderA() {
+  const cur = App.current;
+  const curIdx = open.indexOf(cur);
+  const next = open.filter((r, i) => i > curIdx && r.state !== 'done').slice(0, 4);
+  const uat = App.uatPending();
+  const oldest = uat.filter((u) => u.merged).slice(-1)[0];
+  const recent = App.closedSorted().filter((a) => App.daysAgo(a.merged) <= 7 && a.tokensM != null);
+  const maxT = Math.max(...recent.map((a) => a.tokensM), 1);
+  return `<div class="page">
+    <div class="tiles">
+      <div class="tile now" data-open="${cur.id}" data-sprint="${cur.id}">
+        <div class="tile-label">▶ ${t('now')}</div>
+        <div class="row"><span class="id">${esc(cur.id)}</span>${App.pill(cur.state)}${App.kind((cur.file || {}).header?.kind)}</div>
+        <div class="tile-goal">${goalHtml(cur)}</div>
+        <div class="tile-foot">${cur.after.length ? t('c_after') + ': ' + cur.after.map(App.depChip).join('') : ''}<span>· ${t('c_items')}: <b>${itemsCount(cur)}</b></span></div>
+      </div>
+      <div class="tile"><div class="tile-label">${t('nextUp')}</div>
+        <div class="mini-list">${next.map((r) => `<div class="mini-row" data-open="${r.id}" data-sprint="${r.id}"><span class="pos">${r.pos}.</span><span class="g"><span class="id">${esc(r.id)}</span> ${goalHtml(r)}</span>${App.pill(r.state)}</div>`).join('')}</div>
+      </div>
+      <div class="tile uat"><div class="tile-label">${t('uatWaiting')}</div>
+        <div class="big">${uat.length}</div>
+        <div class="sub">${oldest ? `${t('oldest')}: <span class="id">${esc(oldest.id)}</span>, ${t('daysAgo', { n: App.daysAgo(oldest.merged) })}` : ''}</div>
+        <div class="mini-list">${uat.slice(0, 3).map((u) => `<div class="mini-row" data-open="${u.id}"><span class="pos"></span><span class="g">${esc(App.goal(u.id, u.goal))}</span><span class="subtle">${App.fmtDate(u.merged) || ''}</span></div>`).join('')}</div>
+        <button class="link-btn" onclick="ui.uatAll=!ui.uatAll;App.render()">${ui.uatAll ? t('showLess') : t('showAll', { n: uat.length })}</button>
+      </div>
+      <div class="tile"><div class="tile-label">${t('last7')}</div>
+        <div class="kv"><span>${t('merged7')}</span><span>${recent.length}</span>
+          <span>${t('files7')}</span><span>${recent.reduce((s, a) => s + a.files, 0)}</span>
+          <span>${t('tokens7')}</span><span>${App.fmtM(recent.reduce((s, a) => s + a.tokensM, 0))}</span></div>
+        <div class="bars">${recent.slice().reverse().map((a) => `<div data-open="${a.id}" title="${esc(a.id)} · ${App.fmtM(a.tokensM)} · ${a.files} ${t('files').toLowerCase()}" style="height:${(a.tokensM / maxT) * 100}%"></div>`).join('')}</div>
+      </div>
+    </div>
+    ${ui.uatAll ? uatTable(uat) : ''}
+    <div style="margin-top:var(--space-3)">${counts()}</div>
+    <div class="section-title">${t('queue')} <span class="hint">${t('queueHint')}</span></div>
+    <div class="table-wrap">
+      <div class="table-tools">
+        <label class="muted">${t('group')} <select onchange="ui.group=this.value;App.render()">${['none', 'state', 'kind'].map((g) => `<option value="${g}" ${ui.group === g ? 'selected' : ''}>${t('g_' + g)}</option>`).join('')}</select></label>
+        <span class="spacer"></span>
+        <input placeholder="${t('filter')}" value="${esc(ui.q)}" oninput="ui.q=this.value;document.getElementById('qbody').innerHTML=queueRows()">
+      </div>
+      <table class="grid"><thead><tr><th>#</th><th>${t('c_sprint')}</th><th>${t('c_goal')}</th><th>${t('c_state')}</th><th>${t('c_after')}</th><th>${t('c_kind')}</th><th>${t('c_items')}</th><th>${t('c_est')}</th></tr></thead>
+      <tbody id="qbody">${queueRows()}</tbody></table>
+    </div>
+  </div>`;
+}
+function queueRow(r) {
+  const h = (r.file || {}).header || {};
+  return `<tr data-open="${r.id}" data-sprint="${r.id}" class="${r.current ? 'is-now' : ''}">
+    <td class="pos">${r.current ? '▶' : r.pos}</td><td><span class="id">${esc(r.id)}</span></td>
+    <td class="goal"><div>${goalHtml(r)}</div></td><td>${App.pill(r.state)}</td>
+    <td><div class="chips">${r.after.map(App.depChip).join('')}</div></td>
+    <td>${h.kind ? App.kind(h.kind) + ' <span class="muted">' + t('k_' + h.kind) + '</span>' : '<span class="subtle">—</span>'}</td>
+    <td class="num">${r.file ? itemsCount(r) : '—'}</td><td class="num muted">${App.fmtRange(App.estRange(h.est))}</td></tr>`;
+}
+function queueRows() {
+  const q = ui.q.toLowerCase();
+  const rows = open.filter((r) => !q || (r.id + ' ' + r.goal + ' ' + App.goal(r.id, r.goal)).toLowerCase().includes(q));
+  if (ui.group === 'none') return rows.map(queueRow).join('');
+  const key = ui.group === 'state' ? (r) => r.state : (r) => ((r.file || {}).header || {}).kind || '—';
+  const order = ui.group === 'state' ? ['running', 'ordered', 'ready', 'notes', 'topic', 'done'] : ['bugfix', 'feature', 'maintenance', '—'];
+  return order.map((g) => { const rs = rows.filter((r) => key(r) === g); if (!rs.length) return '';
+    const label = ui.group === 'state' ? App.pill(g) : g === '—' ? '—' : App.kind(g) + ' ' + t('k_' + g);
+    return `<tr class="grp"><td colspan="8">${label} <span class="muted">${rs.length}</span></td></tr>` + rs.map(queueRow).join(''); }).join('');
+}
+function uatTable(uat) {
+  return `<div class="table-wrap uat-table"><table class="grid"><thead><tr><th>${t('c_sprint')}</th><th>${t('c_goal')}</th><th>${t('merged')}</th><th>${t('files')}</th><th>${t('tokens')}</th></tr></thead><tbody>
+    ${uat.map((u) => `<tr data-open="${u.id}"><td><span class="id">${esc(u.id)}</span></td><td class="goal"><div>${esc(App.goal(u.id, u.goal))}</div></td><td>${App.fmtDate(u.merged) || App.pill('done')}</td><td class="num">${u.files ?? '—'}</td><td class="num">${App.fmtM(u.tokensM)}</td></tr>`).join('')}
+  </tbody></table></div>`;
+}
+
+/* ======================= B ======================= */
+function card(r, compact) {
+  const h = (r.file || {}).header || {};
+  if (compact) return `<div class="card compact" data-open="${r.id}"><div class="top"><span class="id">${esc(r.id)}</span><span class="subtle" style="margin-left:auto">${App.fmtDate(r.merged) || ''}</span></div><div class="g">${esc(App.goal(r.id, r.goal))}</div></div>`;
+  return `<div class="card ${r.current ? 'is-now' : ''}" data-open="${r.id}" data-sprint="${r.id}">
+    <div class="top"><span class="ord">#${r.pos}</span><span class="id">${esc(r.id)}</span>${App.kind(h.kind)}${r.current ? `<span class="now-badge" style="margin-left:auto">▶ ${t('now')}</span>` : ''}</div>
+    <div class="g">${goalHtml(r)}</div>
+    <div class="foot">${r.after.length ? '⧗ ' + r.after.map(App.depChip).join('') : ''}${r.file ? `<span>☰ ${itemsCount(r)}</span>` : ''}${h.ui ? '<span title="' + t('mockups') + '">▣</span>' : ''}${h.est ? `<span class="num">${App.fmtRange(App.estRange(h.est))}</span>` : ''}</div>
+  </div>`;
+}
+function renderB() {
+  const uatArch = App.uatPending().filter((u) => !u.open);
+  const shown = ui.boardMore ? uatArch : uatArch.slice(0, 5);
+  return `<div class="page">${counts()}
+    <div class="board">${STATES.map((s) => {
+      const rs = open.filter((r) => r.state === s);
+      const n = rs.length + (s === 'done' ? uatArch.length : 0);
+      return `<div class="col"><div class="col-head">${App.pill(s)}<span class="n">${n}</span></div><div class="col-hint">${t('ch_' + s)}</div>
+        <div class="col-body">${rs.map((r) => card(r)).join('')}
+        ${s === 'done' ? shown.map((a) => card(a, true)).join('') + (uatArch.length > 5 ? `<button class="link-btn" onclick="ui.boardMore=!ui.boardMore;App.render()">${ui.boardMore ? t('showLess') : t('more', { n: uatArch.length - 5 })}</button>` : '') : ''}
+        </div></div>`;
+    }).join('')}</div></div>`;
+}
+
+/* ======================= C ======================= */
+function depth(r, seen = new Set()) {
+  if (seen.has(r.id)) return 0; seen.add(r.id);
+  const deps = r.after.map((a) => App.openMap[a]).filter(Boolean);
+  return deps.length ? 1 + Math.max(...deps.map((d) => depth(d, seen))) : 0;
+}
+function renderC() {
+  const closedIds = [...new Set(open.flatMap((r) => r.after.filter((a) => !App.openMap[a] && App.archMap[a])))];
+  const levels = {}; open.filter((r) => r.state !== 'done').forEach((r) => { const d = depth(r); (levels[d] = levels[d] || []).push(r); });
+  const maxD = Math.max(...Object.keys(levels).map(Number));
+  const uat = App.uatPending();
+  const node = (r) => { const h = (r.file || {}).header || {};
+    return `<div class="node ${r.current ? 'is-now' : ''}" data-open="${r.id}" data-sprint="${r.id}" data-node="${r.id}">
+      <div class="top"><span class="ord subtle">#${r.pos}</span><span class="id">${esc(r.id)}</span>${App.kind(h.kind)}${App.pill(r.state)}${r.current ? `<span class="now-badge">▶</span>` : ''}</div>
+      <div class="g" title="${esc(App.goal(r.id, r.goal))}">${esc(App.goal(r.id, r.goal))}</div></div>`; };
+  const cols = [`<div class="map-col"><h4>${t('m_closed')}<small>${t('m_closedHint')}</small></h4><div class="stack">${closedIds.map((id) => { const a = App.archMap[id];
+      return `<div class="node closed" data-open="${id}" data-sprint="${id}" data-node="${id}"><div class="top"><span class="id">✓ ${esc(id)}</span><span class="subtle" style="margin-left:auto">${App.fmtDate(a.merged)}</span></div><div class="g">${esc(App.goal(id, a.goal))}</div></div>`; }).join('')}</div></div>`];
+  for (let d = 0; d <= maxD; d++) {
+    const title = d === 0 ? t('m_free') : t(d === 1 ? 'm_after' : 'm_afterN', { n: d });
+    const hint = d === 0 ? t('m_freeHint') : t('m_afterHint');
+    cols.push(`<div class="map-col"><h4>${title}<small>${hint}</small></h4><div class="stack">${(levels[d] || []).sort((a, b) => a.pos - b.pos).map(node).join('')}</div></div>`);
+  }
+  return `<div class="page">${counts()}
+    <div class="uat-line"><b>${t('uatLine')} ${uat.length}</b>${uat.slice(0, 6).map((u) => `<span class="chip" data-open="${u.id}">${esc(u.id)}</span>`).join('')}${uat.length > 6 ? `<span class="muted">${t('more', { n: uat.length - 6 })}</span>` : ''}</div>
+    <div class="map" style="grid-template-columns:repeat(${cols.length}, max-content)">${cols.join('')}<svg class="links"></svg></div>
+    <div class="legend"><span><i style="background:var(--st-closed)"></i>${t('lg_closed')}</span><span><i style="background:var(--color-border-strong)"></i>${t('lg_open')}</span></div>
+  </div>`;
+}
+function drawLinks(root) {
+  const map = root.querySelector('.map'); if (!map) return;
+  const svg = map.querySelector('svg.links');
+  svg.setAttribute('width', map.scrollWidth); svg.setAttribute('height', map.scrollHeight);
+  const box = map.getBoundingClientRect();
+  const pos = (id) => { const el = map.querySelector(`[data-node="${CSS.escape(id)}"]`); if (!el) return null; const b = el.getBoundingClientRect();
+    return { l: b.left - box.left + map.scrollLeft, r: b.right - box.left + map.scrollLeft, y: b.top - box.top + b.height / 2 + map.scrollTop }; };
+  let paths = '';
+  open.forEach((r) => r.after.forEach((a) => { const p = pos(a), q = pos(r.id); if (!p || !q) return;
+    const dx = Math.max(30, (q.l - p.r) / 2);
+    paths += `<path data-from="${a}" data-to="${r.id}" class="${App.openMap[a] ? '' : 'closed'}" marker-end="url(#arr)" d="M${p.r},${p.y} C${p.r + dx},${p.y} ${q.l - dx},${q.y} ${q.l - 2},${q.y}"/>`; }));
+  svg.innerHTML = `<defs><marker id="arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 z" style="fill:var(--color-text-subtle);stroke:none"/></marker></defs>` + paths;
+  map.querySelectorAll('.node').forEach((n) => {
+    n.onmouseenter = () => svg.querySelectorAll('path[data-from]').forEach((p) => { const on = p.dataset.from === n.dataset.node || p.dataset.to === n.dataset.node; p.classList.toggle('hi', on); p.classList.toggle('dim', !on); });
+    n.onmouseleave = () => svg.querySelectorAll('path').forEach((p) => p.classList.remove('hi', 'dim'));
+  });
+}
+
+App.init({
+  sketch: '001 · pierwszy ekran', tab: 'roadmap', tabSketch: { backlog: '003', decisions: '003', history: '004' },
+  variants: [
+    { id: 'b2', label: 'B2: Tablica — nowe statusy, „po: X”', winner: true, render: () => App.renderBoard(), after: () => { App.panelMode = 'drawer'; } },
+    { id: 'a', label: 'A: Kafelki + kolejka (GitHub Projects)', render: renderA, after: (el) => App.bindRelations(el) },
+    { id: 'b', label: 'B: Tablica stanów (Jira)', render: renderB, after: (el) => App.bindRelations(el) },
+    { id: 'c', label: 'C: Mapa zależności (Delivery Plans)', render: renderC, after: (el) => { App.bindRelations(el); requestAnimationFrame(() => drawLinks(el)); } },
+  ],
+});
+</script>
+</body>
+</html>

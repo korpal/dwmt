@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sketch 002 — szczegóły sprintu</title>
+<link rel="stylesheet" href="../themes/default.css">
+<link rel="stylesheet" href="../shared/app.css">
+<link rel="stylesheet" href="../shared/board.css">
+<style>
+.hint-bar { margin-top: var(--space-3); font-size: var(--text-sm); color: var(--color-text-muted); }
+.hint-bar b { color: var(--color-text); }
+</style>
+</head>
+<body>
+<script src="../data/data.js"></script>
+<script src="../data/pl.js"></script>
+<script src="../data/human.js"></script>
+<script src="../shared/app.js"></script>
+<script src="../shared/board.js"></script>
+<script>
+App.extendT(
+  { tryHint: 'Kliknij kartę. Sprinty z opisem od PO w <b>data/human.js</b> pokazują go razem z krokami sprawdzenia; pozostałe pokazują wersję zastępczą z pliku sprintu.' },
+  { tryHint: 'Click a card. Sprints with a PO-written description in <b>data/human.js</b> show it with the check steps; the rest show the fallback from the sprint file.' },
+);
+const board = () => App.renderBoard().replace('<div class="page">', `<div class="page"><div class="hint-bar">${App.t('tryHint')}</div>`);
+App.init({
+  sketch: '002 · szczegóły sprintu', tab: 'roadmap', tabSketch: { backlog: '003', decisions: '003', history: '004' },
+  variants: [
+    { id: 'a', label: 'A: Panel boczny', render: board, after: () => { App.panelMode = 'drawer'; } },
+    { id: 'b', label: 'B: Karta na środku (jak zgłoszenie w Jirze)', winner: true, render: board, after: () => { App.panelMode = 'modal'; } },
+    { id: 'c', label: 'C: Osobny widok z powrotem', render: () => (App.pageId ? App.renderPage() : board()), after: () => { App.panelMode = 'page'; } },
+  ],
+});
+</script>
+</body>
+</html>
