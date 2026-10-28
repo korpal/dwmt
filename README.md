@@ -37,7 +37,7 @@ Or turn on auto-update for the `dwmt` marketplace in `/plugin` → Marketplaces.
 
 ## Documentation
 
-Detailed documentation (in Polish) is in [`dwmt/README.md`](dwmt/README.md). Code comments refer to design documents that are not part of this repository.
+`/dwmt:setup` writes a minimal `.claude/dwmt.json`: the model, your test commands in `verify.full` (fill them in) and the target branch. Code comments refer to design documents that are not part of this repository.
 
 ## License
 

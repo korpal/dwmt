@@ -290,7 +290,9 @@ test('git.rebase none: finish bez rebase, squash scala z przesuniętym celem', (
 test('setup: za stary Node to ok: false z podpowiedzią instalacji, minimum z README', async () => {
   const { nodeProblem, MIN_NODE } = await import('../scripts/lib/setup.mjs');
   assert.equal(MIN_NODE, 22);
-  assert.match(readFileSync(new URL('../README.md', import.meta.url), 'utf8'), new RegExp(`Node ≥ ${MIN_NODE}`));
+  // README pluginu w repo roboczym; w repo publicznym (bez dwmt/README.md) README główne.
+  const readme = [new URL('../README.md', import.meta.url), new URL('../../README.md', import.meta.url)].find((u) => existsSync(u));
+  assert.match(readFileSync(readme, 'utf8'), new RegExp(`Node(?:\\.js)? (?:≥ )?${MIN_NODE}`));
   assert.equal(nodeProblem('24.19.0'), null);
   assert.equal(nodeProblem('22.0.0'), null);
   assert.match(nodeProblem('20.11.1'), /Node 20\.11\.1: dwmt wymaga Node >= 22/);
