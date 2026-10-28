@@ -2,13 +2,16 @@ import './tmp-root.mjs';
 // Wybór komend verify w rundach poprawek i naprawy oraz zamykające verify (kt, AC-3, AC-6, R-3, R-4): czyste funkcje.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { normPath, splitCommand, redFiles, selectRuns, mergeResults, closingDecision } from '../scripts/lib/verify-select.mjs';
 import { stripJsonComments } from '../scripts/lib/config.mjs';
 
-const REPO_CFG = JSON.parse(stripJsonComments(readFileSync(fileURLToPath(new URL('../../.claude/dwmt.json', import.meta.url)), 'utf8')));
-const REGEX = REPO_CFG.verify.failedFileRegex;
+// Wzorzec z configu repo roboczego; repo publiczne nie ma `.claude/dwmt.json`, więc ta sama wartość wprost.
+const CFG_FILE = fileURLToPath(new URL('../../.claude/dwmt.json', import.meta.url));
+const REGEX = existsSync(CFG_FILE)
+  ? JSON.parse(stripJsonComments(readFileSync(CFG_FILE, 'utf8'))).verify.failedFileRegex
+  : '(?:not ok \\d+ - |test at )(\\S+\\.test\\.mjs)';
 const GLOB = 'dwmt/test/*.test.mjs';
 const L = 'linux';
 

@@ -1,0 +1,3 @@
+# Templates, scripts and tests expect LF (a Windows checkout with core.autocrlf would turn them into CRLF).
+* text=auto eol=lf
+*.cmd text eol=crlf
