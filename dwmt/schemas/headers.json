@@ -1,0 +1,86 @@
+{
+  "dwmt/brief@1": {
+    "required": ["schema", "run", "goal", "mode", "acceptance", "scope", "verify"],
+    "enums": {
+      "mode": ["inline", "single", "direct"]
+    },
+    "arrays": ["acceptance", "scope", "verify", "risk", "risks", "questions", "decisions", "shared", "read_first", "expectedRed", "delete"]
+  },
+  "dwmt/result@1": {
+    "required": ["schema", "status"],
+    "enums": {
+      "status": ["DONE", "PARTIAL", "BLOCKED"]
+    },
+    "arrays": ["testsRun", "changedContracts", "outOfScopeChanges", "assumptions", "questions", "fixed", "notReproduced", "evidence", "unrelatedRed", "laterNotes", "measurements"]
+  },
+  "dwmt/review@1": {
+    "required": ["schema", "round", "passes", "verdict", "fix"],
+    "enums": {
+      "verdict": ["PASS", "FIX"]
+    },
+    "arrays": ["passes", "fix", "defer", "drop", "acceptance", "risks", "proven", "missed", "units", "visible", "now", "batch", "scriptFindings"]
+  },
+  "dwmt/review-input@1": {
+    "required": ["schema", "run", "round", "passes", "output", "diff", "tests"],
+    "enums": {},
+    "arrays": ["passes", "fix"]
+  },
+  "dwmt/tests@1": {
+    "required": ["schema", "run", "kind", "result", "commands"],
+    "enums": {
+      "kind": ["targeted", "full"],
+      "result": ["pass", "fail", "none"]
+    },
+    "arrays": ["commands", "flaky", "changedUnrun"]
+  },
+  "dwmt/final-report@1": {
+    "required": ["schema", "run", "status", "goal", "rounds", "tests", "sessions"],
+    "enums": {
+      "status": ["PASS", "ACCEPTED"],
+      "uat": ["pending", "n/a"]
+    },
+    "arrays": ["acceptance", "sessions", "deviations", "assumptions", "deferred", "acceptedDeferred", "fixedDeferred", "decisions", "risks", "missed", "verifyChanged", "tasks", "coverage", "scope", "ratchet", "replans", "planFindings", "kept", "measurements"]
+  },
+  "dwmt/plan@1": {
+    "required": ["schema", "run", "goal", "acceptance", "tasks"],
+    "enums": {},
+    "arrays": ["acceptance", "tasks", "scope", "shared", "questions", "decisions", "delete"]
+  },
+  "dwmt/task-report@1": {
+    "required": ["schema", "run", "task", "status"],
+    "enums": {
+      "status": ["PASS", "ACCEPTED"]
+    },
+    "arrays": ["acceptance", "decisions", "assumptions", "changedContracts", "deviations", "deferred", "risks", "laterNotes", "batched", "deleted", "kept"]
+  },
+  "dwmt/uat@1": {
+    "required": ["schema", "sprint", "run"],
+    "enums": {},
+    "arrays": ["entries", "defects", "deferredAccepted"]
+  },
+  "dwmt/sprint-input@1": {
+    "required": ["schema", "sprint"],
+    "enums": {},
+    "arrays": ["order", "after"]
+  },
+  "dwmt/goal-check@1": {
+    "required": ["schema", "items"],
+    "enums": {},
+    "arrays": ["items"]
+  },
+  "dwmt/batch@1": {
+    "required": ["schema", "run", "items"],
+    "enums": {},
+    "arrays": ["items", "tasks"]
+  },
+  "dwmt/batch-report@1": {
+    "required": ["schema", "run", "items"],
+    "enums": {},
+    "arrays": ["items"]
+  },
+  "dwmt/explore@1": {
+    "required": ["schema", "area", "round", "agent"],
+    "enums": {},
+    "arrays": ["stale"]
+  }
+}

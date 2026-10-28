@@ -1,0 +1,11 @@
+The change against the brief and the contracts.
+- Is every AC-n met? Record the result in `acceptance` in the header.
+- Does the change keep the module contracts (types, value ranges, invariants, errors), including ones the diff touches indirectly?
+- Does the changed code still meet the contracts stated in docs and tests, or does it only pass the existing tests?
+- Edge cases: empty input, zero, boundaries, negative, large values.
+- Missing tests for new or changed behaviour.
+- A test meant to prove a bug fix must fail on the code before the fix (read it against the diff: would the old code pass it?). One that would pass is a major finding, whatever the risk weight: the fix is unproven.
+- Decisions D-n from the brief: does the code honour them?
+- A behaviour or content change (prompt text, rule, message, limit) made only so a test passes, that the brief does not ask for and the executor did not report (input section on changes outside the plan): a major finding.
+- An AC whose criterion only a human check can prove (a `Method: human` risk, the UAT): `AC-n met pending UAT`, not `met`.
+- A finding caused by the plan (a contract that does not fit, a missing requirement, a wrong decision) gets the line `- Cause: plan`.

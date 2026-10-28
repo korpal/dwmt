@@ -1,0 +1,10 @@
+{
+  "name": "dwmt",
+  "version": "2.12.2",
+  "description": "dwmt (don't waste my time): a lean sprint workflow for Claude Code. A sprint architect plans all tasks upfront, executors implement, risk-based review and fixer, one squash commit per sprint, then UAT; the mechanics run in a Node script.",
+  "author": {
+    "name": "korpal"
+  },
+  "repository": "https://github.com/korpal/dwmt",
+  "license": "MIT"
+}

@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# dwmt z Git Bash (katalog bin w PATH): `dwmt heavy -- <komenda>` uruchamia komendę w tej samej powłoce (bash), nie w cmd.exe.
+here=$(dirname "$0")
+if [ "${1:-}" = heavy ]; then
+  shift
+  exec node "$here/../scripts/dwmt.mjs" heavy --shell "$(cygpath -m "$BASH" 2>/dev/null || echo "$BASH")" "$@"
+fi
+exec node "$here/../scripts/dwmt.mjs" "$@"

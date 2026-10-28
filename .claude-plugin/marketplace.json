@@ -1,0 +1,17 @@
+{
+  "name": "dwmt",
+  "owner": {
+    "name": "korpal"
+  },
+  "plugins": [
+    {
+      "name": "dwmt",
+      "source": "./dwmt",
+      "description": "dwmt (don't waste my time): a lean sprint workflow for Claude Code.",
+      "homepage": "https://github.com/korpal/dwmt"
+    }
+  ],
+  "metadata": {
+    "description": "dwmt (don't waste my time): a lean sprint workflow plugin for Claude Code."
+  }
+}
